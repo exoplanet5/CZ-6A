@@ -1,18 +1,15 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {Line2} from 'three/addons/lines/Line2.js';
-import {LineSegments2} from 'three/addons/lines/LineSegments2.js';
-import {LineSegmentsGeometry} from 'three/addons/lines/LineSegmentsGeometry.js';
 import {LineGeometry} from 'three/addons/lines/LineGeometry.js';
 import {LineMaterial} from 'three/addons/lines/LineMaterial.js';
 import {CSS2DRenderer, CSS2DObject} from 'three/addons/renderers/CSS2DRenderer.js';
 import * as A from './astro.js';
 import {fetchJSON, validateManifest, validateMission, selectProfile, createFlight, solarEphemeris, sunlightClearance, computeJelly, clockSeconds, clamp, escapeHTML as esc} from './profile.js';
-import {contour} from './visibility.js';
 import {createSkyChart} from './skychart.js';
 
 const $ = (id) => document.getElementById(id);
-const C = {sun:'#ffd54f',accent:'#4fc3f7',ink:'#e8eaed',dim:'#9aa4ae',ascent:'#d95926',orbit:'#3987e5'};
+const C = {sun:'#ffd54f',accent:'#4fc3f7',ink:'#e8eaed',dim:'#9aa4ae',ascent:'#d95926',orbit:'#3987e5',footprint:'#199e70'};
 const qs = new URLSearchParams(location.search);
 const message = (text) => { $('notice').textContent = text; };
 function fail(error) {
@@ -35,13 +32,13 @@ async function start() {
   const requestedT0=clockSeconds(qs.get('t0'));
   const state = {date:M.date,t0:Number.isFinite(requestedT0)?clamp(requestedT0,t0Min,t0Max):clockSeconds(M.t0_default),
     met:num('met',300,metMin,MET_END),follow:qs.get('follow')==='1',playing:false,live:false,speed:num('speed',10,1,300),
-    show:Object.fromEntries(['term','zones','labels','gt','jelly','grid','lights','cities','fp'].map((k)=>[k,qs.has(k)?qs.get(k)!=='0':k!=='fp']))};
+    show:Object.fromEntries(['term','zones','labels','gt','jelly','grid','lights','cities','fp'].map((k)=>[k,qs.get(k)!=='0']))};
   const t0ms=()=>A.dateT0ms(M.date,state.t0), phaseOf=(met)=>(M.phases.find((p)=>met<p.until)||M.phases.at(-1)).label;
   function styleAt(met,T0) {
     const s=shipAt(met),lit=sunlightClearance(s.p,sunAt(T0+met*1000))>0,powered=poweredAt(met);
     return {lit,powered,color:powered?(lit?C.sun:C.ascent):C.orbit};
   }
-  let J=computeJelly(ASC,sunAt,t0ms()), visInfo=null, visibilityWorker=null, visibilityTimer=null, tablesDirty=true;
+  let J=computeJelly(ASC,sunAt,t0ms()), tablesDirty=true;
   const dirty=()=>{tablesDirty=true;};
   document.title='CZ-6A Launch Profiles';
   $('ttl').textContent=M.vehicle; $('ttlsub').textContent=M.date;
@@ -58,11 +55,11 @@ async function start() {
   const controls=new OrbitControls(camera,renderer.domElement);
   Object.assign(controls,{enableDamping:true,dampingFactor:.08,enablePan:false,minDistance:1.05,maxDistance:14,zoomSpeed:.9});
   const materials=new Set(), Y=new THREE.Vector3(0,1,0);
-  function line(flat,{color=C.ink,width=1.8,opacity=1,dashed=false,segments=false}={}) {
-    const g=segments?new LineSegmentsGeometry():new LineGeometry();g.setPositions(flat);
+  function line(flat,{color=C.ink,width=1.8,opacity=1,dashed=false}={}) {
+    const g=new LineGeometry();g.setPositions(flat);
     const m=new LineMaterial({color,linewidth:width,transparent:opacity<1||dashed,opacity,dashed,dashSize:.008,gapSize:.006,depthTest:true});
     m.resolution.set(view.clientWidth,view.clientHeight); materials.add(m);
-    const l=segments?new LineSegments2(g,m):new Line2(g,m);if(dashed)l.computeLineDistances();return l;
+    const l=new Line2(g,m);if(dashed)l.computeLineDistances();return l;
   }
   function group() {const g=new THREE.Group();scene.add(g);return g;}
   function clear(g) {
@@ -87,14 +84,12 @@ async function start() {
   const [dayTex,nightTex]=await Promise.all([loadTex('./tex/earth_day_4k.jpg'),loadTex('./tex/earth_night.jpg')]);
   const ovCanvas=document.createElement('canvas');ovCanvas.width=4096;ovCanvas.height=2048;
   const ovCtx=ovCanvas.getContext('2d'),ovTex=new THREE.CanvasTexture(ovCanvas);ovTex.colorSpace=THREE.NoColorSpace;
-  let visFill=null;
   function drawOverlay() {
     const W=ovCanvas.width,H=ovCanvas.height,X=(lon)=>(lon+180)/360*W,Y=(lat)=>(90-lat)/180*H;
     ovCtx.clearRect(0,0,W,H);
     if(state.show.grid){ovCtx.lineWidth=1;ovCtx.strokeStyle='rgba(255,255,255,.13)';
       for(let lon=-180;lon<=180;lon+=10){ovCtx.beginPath();ovCtx.moveTo(X(lon),0);ovCtx.lineTo(X(lon),H);ovCtx.stroke();}
       for(let lat=-80;lat<=80;lat+=10){ovCtx.beginPath();ovCtx.moveTo(0,Y(lat));ovCtx.lineTo(W,Y(lat));ovCtx.stroke();}}
-    if(visFill)for(const shift of [-W,0,W])ovCtx.drawImage(visFill.canvas,visFill.x+shift,visFill.y,visFill.w,visFill.h);
     if(state.show.zones)for(const z of data.zones){const ring=[];for(const [lon,lat]of z.ring){const prev=ring.at(-1)?.[0]??lon;ring.push([prev+((lon-prev+540)%360)-180,lat]);}for(const shift of [-360,0,360]){ovCtx.beginPath();ring.forEach(([lon,lat],i)=>(i?ovCtx.lineTo:ovCtx.moveTo).call(ovCtx,X(lon+shift),Y(lat)));ovCtx.closePath();ovCtx.fillStyle='rgba(232,234,237,.18)';ovCtx.fill();}}
     ovTex.needsUpdate=true;
   }
@@ -103,7 +98,7 @@ async function start() {
     fragmentShader:`uniform sampler2D dayTex,nightTex,ovTex;uniform vec3 sunDir;uniform float lights;varying vec2 vUv;varying vec3 vP;void main(){float mu=dot(normalize(vP),sunDir);vec3 col=texture2D(dayTex,vUv).rgb*mix(.20,1.,smoothstep(-.2079,.03,mu));vec3 nl=texture2D(nightTex,vUv).rgb;col+=nl*nl*vec3(1.,.86,.62)*1.25*(1.-smoothstep(-.2079,-.0523,mu))*lights;vec4 ov=texture2D(ovTex,vUv);gl_FragColor=vec4(mix(col,ov.rgb,ov.a),1.);}`});
   scene.add(new THREE.Mesh(new THREE.SphereGeometry(1,256,128),earthMat));
   const termGroup=group();termGroup.add(line(circle(90),{color:C.sun,width:1.8}),line(circle(102),{color:C.accent,width:1.5}));
-  const zoneGroup=group(),zoneLabels=group(),trajGroup=group(),gtGroup=group(),eventGroup=group(),jellyGroup=group(),visGroup=group(),cityGroup=group();
+  const zoneGroup=group(),zoneLabels=group(),trajGroup=group(),gtGroup=group(),eventGroup=group(),jellyGroup=group(),cityGroup=group();
   const PAD=A.llToVec(...M.pad),pad=sprite(squareTex,.021);pad.position.set(...PAD.map((v)=>v*1.002));scene.add(pad);
   const padLabel=label(M.pad_name);padLabel.position.copy(pad.position);eventGroup.add(padLabel);
   for(const z of data.zones){const pts=[];for(let i=0;i<z.ring.length-1;i++){const a=z.ring[i],b=z.ring[i+1],dl=((b[0]-a[0]+540)%360)-180,n=Math.max(1,Math.ceil(Math.max(Math.abs(dl),Math.abs(b[1]-a[1]))/.1));for(let j=0;j<n;j++)pts.push(...A.llToVec(a[0]+dl*j/n,a[1]+(b[1]-a[1])*j/n,1.0015));}pts.push(...A.llToVec(...z.ring.at(-1),1.0015));zoneGroup.add(line(pts,{color:z.color,width:1.5}));
@@ -124,20 +119,7 @@ async function start() {
     for(const e of data.events){if(!e.major || e.met===0)continue;const tr=e.track?T[e.track]:null,s=tr?tr.sample(e.met):shipAt(e.met);const p=drawPoint(s),dot=sprite(squareTex,.016);dot.position.set(...p);eventGroup.add(dot);const o=label(`${e.label}\n${A.fmtMET(e.met)}`,'small');o.position.set(...p);eventGroup.add(o);}
     buildJellyLayer();
   }
-  function clearVisibility(){visibilityWorker?.terminate();visibilityWorker=null;clear(visGroup);visFill=null;visInfo=null;drawOverlay();dirty();}
-  function computeVisibility(){clearVisibility();const T0=t0ms();visInfo={pending:true};dirty();
-    const worker=new Worker(new URL('./visibility-worker.js',import.meta.url),{type:'module'});visibilityWorker=worker;
-    worker.onerror=(event)=>{if(worker!==visibilityWorker)return;visInfo={error:event.message||'Worker unavailable'};worker.terminate();visibilityWorker=null;dirty();};
-    worker.onmessage=({data:r})=>{if(worker!==visibilityWorker || r.T0 && r.T0!==t0ms())return;worker.terminate();visibilityWorker=null;
-      if(r.error){visInfo={error:r.error};dirty();return;}
-      visInfo=r;const cv=document.createElement('canvas');cv.width=r.nx;cv.height=r.ny;const g=cv.getContext('2d'),image=g.createImageData(r.nx,r.ny);
-      for(let j=0;j<r.ny;j++)for(let i=0;i<r.nx;i++){const k=j*r.nx+i;if(r.mel[k]<M.visibility.levels[0]||r.darkAtInsertion[k]<0)continue;const p=4*((r.ny-1-j)*r.nx+i);image.data.set([232,234,237,27],p);}g.putImageData(image,0,0);
-      visFill={canvas:cv,x:(r.lon0+180)/360*ovCanvas.width,y:(90-r.lat0-(r.ny-1)*r.dy)/180*ovCanvas.height,w:(r.nx-1)*r.dx/360*ovCanvas.width,h:(r.ny-1)*r.dy/180*ovCanvas.height};
-      for(const lev of M.visibility.levels){const field=Float32Array.from(r.mel,(v,i)=>Math.min(v-lev,r.darkAtInsertion[i]));const segs=contour(field,r.nx,r.ny,r.lon0,r.lat0,r.dx,r.dy,0);if(!segs.length)continue;visGroup.add(line(segs.flatMap(([lon,lat])=>A.llToVec(lon,lat,1.002)),{color:C.ink,width:1.2,dashed:true,segments:true}));const p=segs.reduce((a,b)=>b[0]>a[0]?b:a);const o=label(`≥${lev}°`,'small');o.position.set(...A.llToVec(...p,1.003));visGroup.add(o);}
-      drawOverlay();dirty();};
-    worker.postMessage({mission:data,T0});
-  }
-  function onT0Change(){clearTimeout(visibilityTimer);clearVisibility();J=computeJelly(ASC,sunAt,t0ms());buildJellyLayer();visInfo={pending:true};visibilityTimer=setTimeout(computeVisibility,160);dirty();}
+  function onT0Change(){J=computeJelly(ASC,sunAt,t0ms());buildJellyLayer();dirty();}
 
   const rocketTex=texture((g,s)=>{g.strokeStyle='#080a0e';g.lineWidth=2;g.fillStyle='#c9cfd5';
     for(const side of [-1,1]){const x=s/2+side*s*.15;g.beginPath();g.moveTo(x-s*.045,s*.87);g.lineTo(x-s*.045,s*.48);g.lineTo(x,s*.38);g.lineTo(x+s*.045,s*.48);g.lineTo(x+s*.045,s*.87);g.closePath();g.fill();g.stroke();}
@@ -146,7 +128,7 @@ async function start() {
   const glowTex=texture((g,s)=>{const r=s/2,gr=g.createRadialGradient(r,r,0,r,r,r);gr.addColorStop(0,'rgba(255,244,211,.9)');gr.addColorStop(.22,'rgba(255,230,150,.5)');gr.addColorStop(.7,'rgba(120,190,255,.1)');gr.addColorStop(1,'rgba(120,190,255,0)');g.fillStyle=gr;g.fillRect(0,0,s,s);},128);
   const glow=sprite(glowTex,.10);glow.material.blending=THREE.AdditiveBlending;glow.material.depthWrite=false;scene.add(glow);
   let fp=null,fpLam=-1;
-  function updateFootprint(s){if(!state.show.fp){if(fp)fp.visible=false;return;}const lam=A.footprintDeg(s.alt,15);if(!fp||Math.abs(lam-fpLam)>.03){if(fp){scene.remove(fp);fp.geometry.dispose();materials.delete(fp.material);fp.material.dispose();}fp=line(circle(lam),{color:C.ink,dashed:true,width:1});scene.add(fp);fpLam=lam;}fp.quaternion.setFromUnitVectors(Y,new THREE.Vector3(...s.u));fp.visible=s.alt>1;}
+  function updateFootprint(s){if(!state.show.fp){if(fp)fp.visible=false;return;}const lam=A.footprintDeg(s.alt,15);if(!fp||Math.abs(lam-fpLam)>.03){if(fp){scene.remove(fp);fp.geometry.dispose();materials.delete(fp.material);fp.material.dispose();}fp=line(circle(lam),{color:C.footprint,dashed:true,width:1.5});scene.add(fp);fpLam=lam;}fp.quaternion.setFromUnitVectors(Y,new THREE.Vector3(...s.u));fp.visible=s.alt>1;}
   let skySite=null;
   const sky=createSkyChart({shipAt,metEnd:()=>MET_END,styleAt,seco:M.insertion_met,vehicle:M.vehicle,fmtMET:A.fmtMET,sunSubpoint,
     sunPosition:sunAt,getState:()=>({met:state.met,t0ms:t0ms()}),onJump:(met)=>{setPlaying(false);setMet(met);},onSite:(site)=>{skySite=site;}});
@@ -181,7 +163,7 @@ async function start() {
   function shareURL(){const ll=A.vecToLL(camera.position.x,camera.position.y,camera.position.z),q=new URLSearchParams({profile:profile.id,mission:entry.id,t0:A.fmtHMS(t0ms()),met:state.met.toFixed(3),cam:`${ll.lon.toFixed(3)},${ll.lat.toFixed(3)},${camera.position.length().toFixed(3)}`,follow:state.follow?'1':'0',speed:state.speed});for(const [k,v]of Object.entries(state.show))q.set(k,v?'1':'0');if(sky.isOpen()&&skySite)q.set('sky',`${skySite.lat.toFixed(4)},${skySite.lon.toFixed(4)}`);return `${location.origin}${location.pathname}?${q}`;}
   $('link').onclick=()=>{const url=shareURL();history.replaceState(null,'',url);copyText(url,$('link'));};$('copytle').onclick=()=>copyText($('tle').textContent,$('copytle'));
   $('events').onclick=(e)=>{const row=e.target.closest('[data-met]');if(row){setPlaying(false);setMet(+row.dataset.met);}};
-  $('legend').innerHTML=`<div>${M.flight_segments.map((k)=>`<span><i style="border-color:${data.tracks[k].color}"></i>${esc(data.tracks[k].label)}</span>`).join('')}<span><i style="border-color:${C.sun};border-top-width:3px"></i>Sunlit ascent</span></div><div><span><i class="d"></i>≥${M.visibility.levels[0]}° envelope</span><span><i style="border-color:${C.sun}"></i>Sun 0°</span><span><i style="border-color:${C.accent}"></i>Sun −12°</span></div>`;
+  $('legend').innerHTML=`<div>${M.flight_segments.map((k)=>`<span><i style="border-color:${data.tracks[k].color}"></i>${esc(data.tracks[k].label)}</span>`).join('')}<span><i style="border-color:${C.sun};border-top-width:3px"></i>Sunlit ascent</span></div><div><span><i class="d" style="border-color:${C.footprint}"></i>15° circle</span><span><i style="border-color:${C.sun}"></i>Sun 0°</span><span><i style="border-color:${C.accent}"></i>Sun −12°</span></div>`;
   $('about').innerHTML='<p>Conditional model, not an observed trajectory.</p><p>WGS84 geometry · JPL DE440s sunlight.</p><p><a href="https://github.com/exoplanet5/CZ-6A#scientific-limitations" target="_blank" rel="noopener noreferrer">Model notes & sources ↗</a></p>';
   const narrow=matchMedia('(max-width:860px)');let panels={ctl:!narrow.matches,info:!narrow.matches};
   try{const saved=JSON.parse(localStorage.getItem('cz6a-panels'));if(saved&&!narrow.matches)panels={ctl:!!saved.ctl,info:!!saved.info};}catch{}
@@ -192,8 +174,6 @@ async function start() {
 
   const timeline=()=>[...data.events,...(J.pickup&&!J.pickup.fromLiftoff?[{met:J.pickup.met,label:'Sunlight pickup'}]:[])].sort((a,b)=>a.met-b.met);
   function buildTables(){const T0=t0ms();$('t0v').textContent=A.fmtHMS(T0)+'Z';
-    const rows=[['Pad sky',`${A.lightingClass(-J.dep[0])} · Sun ${(-J.dep[0]).toFixed(1)}°`],['Sunlight pickup',J.pickup?`${J.pickup.fromLiftoff?'At liftoff':A.fmtMET(J.pickup.met)} · ${J.pickup.alt.toFixed(1)} km`:'None during ascent'],['Ascent ends',`${A.fmtMET(M.insertion_met)} · ${A.fmtHMS(T0+M.insertion_met*1000)}Z`],['Envelope',visInfo?.pending?'Calculating…':visInfo?.error?`Unavailable: ${visInfo.error}`:visInfo?`≥${M.visibility.levels[0]}° · ${(visInfo.area[M.visibility.levels[0]]/1000).toFixed(0)}k km² within map bounds`:'—']];
-    $('jelly').querySelector('tbody').innerHTML=rows.map(([k,v])=>`<tr><td>${k}</td><td>${esc(v)}</td></tr>`).join('');
     $('hazard').querySelector('tbody').innerHTML=data.zones.map((z)=>`<tr><td>${esc(z.id)}<br>${esc(z.role)}</td><td>${z.t0.slice(0,2)}:${z.t0.slice(2)}–${z.t1.slice(0,2)}:${z.t1.slice(2)}Z</td><td>${z.impact?A.fmtHMS(T0+z.impact.met*1000)+'Z':'Not modeled'}</td></tr>`).join('');
     $('events').querySelector('tbody').innerHTML=timeline().map((e)=>`<tr><td><button class="time-jump" data-met="${e.met}">${A.fmtMET(e.met)}</button></td><td>${A.fmtHMS(T0+e.met*1000)}</td><td>${esc(e.label)}</td></tr>`).join('');
     const R=data.tle_ref,sets=R?.sets||[];$('tle').textContent=sets.length?sets.map((s)=>{const t=A.tleForT0(s,R.t0,R.raan_rate_deg_per_min,T0);return `${t.name}\n${t.l1}\n${t.l2}`;}).join('\n\n'):'No TLE supplied for this profile.';$('copytle').disabled=!sets.length;
@@ -218,7 +198,7 @@ async function start() {
   function declutterLabels(){
     const boxes=['ctl','info','legend'].map((id)=>$(id)).filter((el)=>el.getClientRects().length).map((el)=>el.getBoundingClientRect());
     const overlap=(a,b)=>a.left<b.right+4 && a.right+4>b.left && a.top<b.bottom+3 && a.bottom+3>b.top;
-    const objects=[shipLabel,pickupLabel,...eventGroup.children,...zoneLabels.children,...visGroup.children,...cityGroup.children];
+    const objects=[shipLabel,pickupLabel,...eventGroup.children,...zoneLabels.children,...cityGroup.children];
     for(const o of objects){if(!o.isCSS2DObject || o.element.style.display==='none')continue;const r=o.element.getBoundingClientRect();const show=r.left>=16 && r.right<=innerWidth-16 && r.top>=50 && r.bottom<=innerHeight-24 && !boxes.some((b)=>overlap(r,b));o.element.style.visibility=show?'visible':'hidden';if(show)boxes.push(r);}
   }
   let last=null,lastUI=0;
@@ -232,7 +212,7 @@ async function start() {
     if(fly){const k=clamp((now-fly.start)/1200,0,1),t=k*k*(3-2*k),d=THREE.MathUtils.lerp(fly.from.length(),fly.to.length(),t);camera.position.copy(fly.from.clone().normalize().lerp(fly.to.clone().normalize(),t).normalize().multiplyScalar(d));if(k===1)fly=null;}
     else if(state.follow){const d=camera.position.length();camera.position.normalize().lerp(new THREE.Vector3(...s.u),1-Math.exp(-dt*2.5)).normalize().multiplyScalar(d);}
     controls.rotateSpeed=Math.min(1,.12+.3*(camera.position.length()-1));controls.update();
-    for(const g of [zoneLabels,eventGroup,visGroup])for(const o of g.children)if(o.isCSS2DObject)o.visible=state.show.labels&&visible(o.position);
+    for(const g of [zoneLabels,eventGroup])for(const o of g.children)if(o.isCSS2DObject)o.visible=state.show.labels&&visible(o.position);
     pickup.visible=!!J.pickup&&state.show.jelly;pickupLabel.visible=pickup.visible&&state.show.labels&&visible(pickup.position);shipLabel.visible=state.show.labels&&visible(ship.position);
     for(const o of cityGroup.children)o.visible=visible(o.position)&&camera.position.length()<(o.userData.tier===1?2.9:1.75)&&(!o.isCSS2DObject||state.show.labels);
     renderer.render(scene,camera);labels.render(scene,camera);declutterLabels();if(sky.isOpen()&&now-lastUI>80)sky.render();if(now-lastUI>100){lastUI=now;updateUI(s);}requestAnimationFrame(frame);
@@ -241,10 +221,10 @@ async function start() {
   addEventListener('resize',resize);resize();
   const cam=(qs.get('cam')||'').split(',').map(Number),v=M.views[Math.min(2,M.views.length-1)];
   const [lon,lat,dist]=cam.length===3&&cam.every(Number.isFinite)?[cam[0],clamp(cam[1],-90,90),clamp(cam[2],1.05,14)]:v.slice(1);
-  camera.position.set(...A.llToVec(lon,lat,qs.has('cam')?dist:clamp(1+(dist-1)*cameraScale(),1.05,14)));camera.lookAt(0,0,0);drawOverlay();buildTrajectory();computeVisibility();
+  camera.position.set(...A.llToVec(lon,lat,qs.has('cam')?dist:clamp(1+(dist-1)*cameraScale(),1.05,14)));camera.lookAt(0,0,0);drawOverlay();buildTrajectory();
   requestAnimationFrame((t)=>{frame(t);$('loading').remove();});
   const want=qs.get('sky'),city=CITIES.find((c)=>c[0].toLowerCase()===want?.toLowerCase()),ll=(want||'').split(',').map(Number);
   if(city)openSky({name:city[0],lon:city[1],lat:city[2]});else if(ll.length===2&&ll.every(Number.isFinite)&&Math.abs(ll[0])<=90&&Math.abs(ll[1])<=180)openSky({lat:ll[0],lon:ll[1],custom:true});
-  window.__cz6a={state,setMet,setT0,setPlaying,flyTo,camera,shareURL,sky,shipAt,jelly:()=>J,visInfo:()=>visInfo,meta:M,groups:{trajGroup,jellyGroup,visGroup,termGroup},profile:profile.id,mission:entry.id};
+  window.__cz6a={state,setMet,setT0,setPlaying,flyTo,camera,shareURL,sky,shipAt,jelly:()=>J,footprint:()=>fp,meta:M,groups:{trajGroup,jellyGroup,termGroup},profile:profile.id,mission:entry.id};
   if(renderer.capabilities.maxTextureSize>=8192)loadTex('./tex/earth_day_8k.jpg').then((t)=>{earthMat.uniforms.dayTex.value=t;dayTex.dispose();}).catch(()=>{});
 }

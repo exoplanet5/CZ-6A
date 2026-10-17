@@ -13,14 +13,15 @@ python3 -m http.server 8766 --bind 127.0.0.1 --directory docs
 # Open http://127.0.0.1:8766/
 ```
 
-Use an HTTP server, not a `file://` URL: the viewer loads ES modules, JSON and a visibility worker.
+Use an HTTP server, not a `file://` URL: the viewer loads ES modules, JSON and local assets.
 
 - Select a **profile**, then a **mission configuration**. Defaults are explicit; adding a profile never silently changes the landing mission.
-- Change **T0** to recompute Sun geometry, sunlight pickup, visibility and the synthetic TLE orientation. The supplied Earth-fixed track stays unchanged.
+- Change **T0** to recompute Sun geometry, sunlight pickup and the synthetic TLE orientation. The supplied Earth-fixed track stays unchanged.
 - Scrub MET, play at 1–300×, or click a timeline time. Space toggles playback; arrows seek 10 s, or 300 s with Shift, when a form control is not focused.
 - Drag the globe to rotate and scroll to zoom. Camera presets and vehicle-follow mode are available. Hover the trajectory for MET/altitude; click to seek.
 - Click city labels or open **Observer sky chart** and enter coordinates. It shows ascent and orbital passes, Sun/Moon, stars, and optional constellation/Milky Way layers.
-- Toggle the sunlit-plume illustration, NOTAM polygons, ground tracks, city lights and solar contours. The night-side ascent envelope stays displayed; it has no checkbox. Turning off the plume does not hide the ascent.
+- Toggle the sunlit-plume illustration, NOTAM polygons, ground tracks, city lights and solar contours. Turning off the plume does not hide the ascent.
+- The **green 15° circle** is enabled by default and follows the vehicle's current position and altitude. Its checkbox or `?fp=0` can turn it off. The ascent visibility envelope and Twilight jellyfish information panel are no longer displayed or computed by the viewer.
 - **Copy link** restores profile, mission, T0, numeric MET (including negative times), camera, speed, layer toggles and an open observer site. Height is fixed at true scale (×1). Panel visibility is a per-browser convenience; blocked storage is tolerated.
 - Live clock operates only within the modeled time span; it does not extrapolate a flight outside the data.
 
@@ -55,16 +56,16 @@ The exporter resamples the existing solution; it does not fit or integrate a new
 
 - Sun vectors come from **JPL DE440s**, geometric Earth-to-Sun positions in ITRS/ECEF, at 30-second cadence. Linear interpolation covers all allowed T0/MET combinations, including the prelaunch interval; no extrapolation is allowed.
 - Sunlight requires the vehicle-to-Sun-centre segment to miss the WGS84 ellipsoid. There is **no 34′ refraction adjustment**. The first pickup agrees with the source calculation to within 0.001 s; this is an export consistency check, not predictive timing accuracy.
-- The ≥15° envelope is the union over **sunlit ascent**, requiring the observer's Sun-centre altitude ≤0° and the vehicle elevation ≥15° **at the same time**. It is additionally clipped to observer darkness at insertion, like the regional PNG. It is computed asynchronously on a 0.2° grid, with approximately 2 s time sampling, within 75–118°E / 20–45°N.
-- The envelope is fixed for the selected T0. The globe's **solid yellow Sun 0°** and **solid cyan Sun −12°** contours move with playback UTC. At other METs the envelope need not coincide with the moving terminator.
-- Sky-chart pass badges count sampled time with a sunlit vehicle, elevation ≥15°, and observer Sun ≤0°. They include orbital passes, unlike the ascent-only map envelope, and do not apply its insertion-time mask. AOS/LOS are drawn at a 1° elevation threshold.
-- Glow is an illustration, not a prediction of plume size, persistence, brightness or detectability. No terrain, weather, extinction, refraction or finite-disc emergence is modeled. The optional instantaneous 15° circle is a spherical approximation and has no night mask.
+- The instantaneous **15° circle** is a spherical minimum-elevation footprint, drawn dashed green (`#199e70`). It has no observer-night mask and is not an accumulated ascent envelope. The globe's **solid yellow Sun 0°** and **solid cyan Sun −12°** contours move with playback UTC.
+- Source-model visibility-analysis helpers remain available for validation, but the viewer neither loads the visibility worker nor draws its fill, boundary or labels. The archived method unions sunlit-ascent samples with vehicle elevation ≥15° and observer Sun ≤0° at the same time, with an additional insertion-time darkness mask.
+- Sky-chart pass badges count sampled time with a sunlit vehicle, elevation ≥15°, and observer Sun ≤0°. They include ascent and orbital passes and are independent of the instantaneous circle. AOS/LOS are drawn at a 1° elevation threshold.
+- Glow is an illustration, not a prediction of plume size, persistence, brightness or detectability. No terrain, weather, extinction, refraction or finite-disc emergence is modeled.
 - Physics and look angles use WGS84 km; the textured globe is spherical for drawing, with heights at true scale. Moon and star rendering use approximate astronomy.
 
 ## Files and reproducibility
 
 - `docs/index.html`: static page and styling.
-- `docs/js/app.js`: scene and controls; `profile.js`: validation, tracks and geometric sunlight; `visibility*.js`: worker-based envelope; `astro.js`, `skychart.js`: astronomy and observer charts.
+- `docs/js/app.js`: scene and controls; `profile.js`: validation, tracks and geometric sunlight; `astro.js`, `skychart.js`: astronomy and observer charts. `visibility*.js` are retained source-model analysis helpers, not loaded by the viewer.
 - `docs/data/profiles.json`: profile/mission manifest, with explicit defaults.
 - `docs/data/yaogan50-03.json`: self-contained first mission, including tracks, solar vectors, zones, events and synthetic TLE.
 - `profiles/retrograde-142/yaogan50-03/`: archived trajectory CSV, synthetic TLE, supplied KML and sanitized source metadata. No raw Space-Track records are included.
@@ -97,6 +98,6 @@ The viewer is published at **https://exoplanet5.github.io/CZ-6A/**. GitHub Pages
 
 ## Credits and sources
 
-Illustration: Mickey. NASA Blue Marble Next Generation / Black Marble base textures. Three.js is vendored with its MIT license (`docs/vendor/three/LICENSE`). Star catalog and Milky Way data are from d3-celestial, BSD-3 (`docs/data/STARDATA-LICENSE.txt`). Sky-chart and viewer components are adapted from [ZhuQue](https://github.com/exoplanet5/ZhuQue) and [Starship IFT-14](https://github.com/exoplanet5/Starship-IFT14), with CZ-6A profile loading, geometric illumination, asynchronous night-side visibility, optional events/tracks and responsive controls added here. Code license: Apache-2.0, see `LICENSE`.
+Illustration: Mickey. NASA Blue Marble Next Generation / Black Marble base textures. Three.js is vendored with its MIT license (`docs/vendor/three/LICENSE`). Star catalog and Milky Way data are from d3-celestial, BSD-3 (`docs/data/STARDATA-LICENSE.txt`). Sky-chart and viewer components are adapted from [ZhuQue](https://github.com/exoplanet5/ZhuQue) and [Starship IFT-14](https://github.com/exoplanet5/Starship-IFT14), with CZ-6A profile loading, geometric illumination, optional events/tracks and responsive controls added here. Code license: Apache-2.0, see `LICENSE`.
 
 The initial scientific source is the local `launch_traj_6A_reverse` reconstruction and supplied NOTAM A5283/26, issued 2026-10-17. The Yaogan-50 02 launch-time reference is [Next Spaceflight's March 15 flight record](https://nextspaceflight.com/launches/details/8186), also documented by [SciNews/CCTV](https://www.youtube.com/watch?v=L0gIO7TAA4g). Derived precursor orbit-family parameters inform the model; raw catalog downloads are not redistributed. This is an independent visualization, not official launch guidance or an official ephemeris.

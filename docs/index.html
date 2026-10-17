@@ -30,7 +30,7 @@ select{flex:1;min-width:0;background:var(--input);border:1px solid var(--border)
 #profile-summary{margin-top:9px;font-variant-numeric:tabular-nums}.note{font-size:10.5px;line-height:1.6;color:var(--dim);margin:8px 0 0;overflow-wrap:anywhere}#about a{color:var(--fg);text-underline-offset:3px}
 .layers{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:9px}.chk{display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;min-height:25px}.chk input{accent-color:var(--accent);margin:0}
 #model-badge{font-size:10px;text-transform:uppercase;letter-spacing:.08em;border:1px solid var(--border);padding:3px 6px;border-radius:3px;display:inline-block;margin-bottom:12px;color:var(--dim)}
-table{width:100%;border-collapse:collapse;font-size:11px;font-variant-numeric:tabular-nums}td,th{text-align:left;padding:4px 3px;vertical-align:top}th{color:var(--dim);font-weight:400;border-bottom:1px solid var(--border)}#status td:first-child,#jelly td:first-child{color:var(--dim);width:105px}#status td+td,#jelly td+td{overflow-wrap:anywhere}
+table{width:100%;border-collapse:collapse;font-size:11px;font-variant-numeric:tabular-nums}td,th{text-align:left;padding:4px 3px;vertical-align:top}th{color:var(--dim);font-weight:400;border-bottom:1px solid var(--border)}#status td:first-child{color:var(--dim);width:105px}#status td+td{overflow-wrap:anywhere}
 #events{font-size:10px}#events td{padding-block:6px}#events tr.past{opacity:.55}#events tr.next{background:var(--surface)}.time-jump{background:none;border:0;padding:0;color:var(--fg);cursor:pointer;font:inherit;white-space:nowrap;text-decoration:underline;text-decoration-color:var(--dim);text-underline-offset:3px}
 #tle{max-width:100%;font-size:10px;line-height:1.5;white-space:pre;overflow:auto;background:var(--input);border:1px solid var(--border);padding:8px;border-radius:4px}
 #legend{flex:none;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:9px;pointer-events:auto}#legend>div{display:flex;justify-content:space-between;gap:8px}#legend>div+div{margin-top:5px}#legend span{white-space:nowrap}#legend i{display:inline-block;width:14px;border-top:2px solid var(--fg);vertical-align:3px;margin-right:4px}#legend i.d{border-top-style:dashed}
@@ -72,7 +72,7 @@ table{width:100%;border-collapse:collapse;font-size:11px;font-variant-numeric:ta
 <label class="chk"><input id="o-follow" type="checkbox">Follow vehicle</label><label class="chk"><input id="o-jelly" type="checkbox">Sunlit plume</label>
 <label class="chk"><input id="o-term" type="checkbox">Terminators</label>
 <label class="chk"><input id="o-zones" type="checkbox">NOTAM zone</label><label class="chk"><input id="o-labels" type="checkbox">Labels</label>
-<label class="chk"><input id="o-gt" type="checkbox">Ground track</label><label class="chk"><input id="o-fp" type="checkbox">15° circle</label>
+<label class="chk"><input id="o-gt" type="checkbox">Ground track</label><label class="chk"><input id="o-fp" type="checkbox" checked>15° circle</label>
 <label class="chk"><input id="o-grid" type="checkbox">Graticule</label><label class="chk"><input id="o-cities" type="checkbox">Cities</label>
 <label class="chk"><input id="o-lights" type="checkbox">City lights</label>
 </div><p class="note">Drag to orbit · scroll to zoom · click a city for its sky chart. Hover the trajectory for time and altitude; click to seek.</p>
@@ -81,8 +81,6 @@ table{width:100%;border-collapse:collapse;font-size:11px;font-variant-numeric:ta
 </div>
 <aside id="info" class="panel" aria-label="Flight information">
 <div id="model-badge"></div><h2>Vehicle status</h2><table id="status"><tbody></tbody></table>
-<h2>Twilight jellyfish</h2><table id="jelly"><tbody></tbody></table>
-<p class="note">Sunlit vehicle + observer elevation ≥15° + observer Sun ≤0°, checked together during ascent. The union is also clipped to darkness at insertion; it is not a live footprint. Geometric Sun centre, no refraction. Glow is illustrative, not plume size or brightness. Dashed gray curve: shadow height.</p>
 <h2>Published hazard zone</h2><table id="hazard"><thead><tr><th>NOTAM</th><th>Window UTC</th><th>Impact</th></tr></thead><tbody></tbody></table>
 <p class="note">Published hazard windows are not liftoff or impact-time measurements. Impact timing is shown only when supplied by a profile.</p>
 <h2>Flight timeline</h2><table id="events"><thead><tr><th>MET · seek</th><th>UTC</th><th>Event</th></tr></thead><tbody></tbody></table>

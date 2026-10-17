@@ -26,8 +26,8 @@ Top level: `schema_version: 1`, `meta`, `tracks`, `zones`, `events`, `sun`, and 
 - `powered_intervals`: arrays `[start_MET,end_MET]`; drive vehicle illumination styling, not assumed staging events. Supply only justified intervals and qualify surrogate timing in notes.
 - `phases`: increasing `{until,label}` entries. Prelaunch is normally `{until:0,label:'Pre-launch'}`; the final label persists to the end.
 - `views`: arrays `[label,longitude,latitude,camera_distance]`. Distance is in Earth radii, valid 1.05–14; responsive framing adjusts it on narrow screens.
-- `visibility`: `{extent:[west,east,south,north],grid_step_deg,time_step_s,levels:[15]}`. The extent is an explicit bounded analysis region. To cross the dateline, use increasing unwrapped longitudes such as 170–190, not 170 to −170. Longitude span must be ≤360°, latitude limits within ±90°, and grid size ≤200,000 cells. Choose coarser grids for wide polar/global domains; the worker does not make arbitrarily dense grids cheap.
-- `notes`: plain-text model assumptions, source attribution, limitations and uncertainty distinctions. Notes are escaped before display.
+- `visibility`: `{extent:[west,east,south,north],grid_step_deg,time_step_s,levels:[15]}`. Retained in schema v1 for source-model analysis and validation; the viewer does not compute or display the ascent envelope. The extent is an explicit bounded analysis region. To cross the dateline, use increasing unwrapped longitudes such as 170–190, not 170 to −170. Longitude span must be ≤360°, latitude limits within ±90°, and grid size ≤200,000 cells.
+- `notes`: plain-text model assumptions, source attribution, limitations and uncertainty distinctions. Full notes remain in the mission data; the concise UI links to the README rather than repeating them.
 
 ### Uniform tracks
 
@@ -57,7 +57,7 @@ The browser creates separate arrays for geodetic spherical drawing and physical 
 
 `sun` has `start_utc`, `dt` (seconds), `vectors` (geometric Earth-to-Sun **ECEF km**, not unit vectors), and a `model` description. Coverage must include `t0_min − 600 s` through `t0_max + final_MET`. The runtime rejects insufficient coverage; it never extrapolates. Current data uses DE440s at 30 s cadence.
 
-Sunlight uses a finite segment from the WGS84 vehicle position to the solar centre. The visibility worker checks observer darkness and vehicle elevation at the same sample, and clips to darkness at `insertion_met`. This envelope is not a brightness forecast. The solar contours on the textured globe use geodetic normals on its spherical drawing and are visual references; the envelope uses finite-distance, ellipsoidal geometry.
+Sunlight uses a finite segment from the WGS84 vehicle position to the solar centre. The solar contours on the textured globe use geodetic normals on its spherical drawing and are visual references. The default-on green 15° circle is an instantaneous spherical footprint, without a night mask. The archived visibility-analysis helpers use finite-distance, ellipsoidal geometry and an insertion-time night mask, but are not loaded or rendered by the viewer.
 
 ### Optional synthetic TLE
 

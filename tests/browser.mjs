@@ -10,7 +10,7 @@ const output=new URL('../.test-artifacts/',import.meta.url);await fs.mkdir(outpu
 const profile=await fs.mkdtemp(path.join(os.tmpdir(),'cz6a-browser-'));
 const chrome=spawn(chromePath,['--headless=new','--remote-debugging-port=0',`--user-data-dir=${profile}`,'--no-first-run','--no-default-browser-check','about:blank'],{stdio:'ignore'});
 const delay=(ms)=>new Promise((r)=>setTimeout(r,ms));
-const errors=[],checks=[];let ws;
+const errors=[],checks=[],requests=[];let ws;
 try{
   let port;
   for(let i=0;i<200;i++){try{port=+(await fs.readFile(path.join(profile,'DevToolsActivePort'),'utf8')).split('\n')[0];break;}catch{await delay(100);}}
@@ -19,6 +19,7 @@ try{
   ws=new WebSocket(targets.find((t)=>t.type==='page').webSocketDebuggerUrl);await new Promise((r,j)=>{ws.onopen=r;ws.onerror=j;});
   let id=0;const waiting=new Map();
   ws.onmessage=({data})=>{const m=JSON.parse(data);if(m.id){const p=waiting.get(m.id);if(p){waiting.delete(m.id);m.error?p.reject(new Error(m.error.message)):p.resolve(m.result);}}
+    if(m.method==='Network.requestWillBeSent')requests.push(m.params.request.url);
     if(m.method==='Runtime.exceptionThrown')errors.push(m.params.exceptionDetails.exception?.description||m.params.exceptionDetails.text);
     if(m.method==='Runtime.consoleAPICalled'&&m.params.type==='error')errors.push(m.params.args.map((a)=>a.value||a.description).join(' '));
     if(m.method==='Network.responseReceived'&&m.params.response.status>=400)errors.push(`${m.params.response.status} ${m.params.response.url}`);
@@ -26,7 +27,7 @@ try{
   const call=(method,params={})=>new Promise((resolve,reject)=>{const n=++id;waiting.set(n,{resolve,reject});ws.send(JSON.stringify({id:n,method,params}));});
   const evaluate=async(expression)=>{const r=await call('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw new Error(r.exceptionDetails.exception?.description||r.exceptionDetails.text);return r.result.value;};
   async function wait(expression,timeout=30000){const start=Date.now();while(Date.now()-start<timeout){if(await evaluate(expression))return;await delay(100);}throw new Error('Timed out: '+expression);}
-  async function navigate(url){await call('Page.navigate',{url});await wait('!!window.__cz6a && !document.getElementById("loading") && !!window.__cz6a.visInfo() && !window.__cz6a.visInfo().pending');assert.equal(await evaluate('window.__cz6a.visInfo().error||null'),null);}
+  async function navigate(url){await call('Page.navigate',{url});await wait('!!window.__cz6a && !document.getElementById("loading")');}
   async function shot(name){await delay(300);const r=await call('Page.captureScreenshot',{format:'png'});await fs.writeFile(new URL(name,output),Buffer.from(r.data,'base64'));}
   const check=(name,ok)=>{assert.ok(ok,name);checks.push(name);};
   await call('Runtime.enable');await call('Page.enable');await call('Network.enable');
@@ -34,15 +35,20 @@ try{
   await navigate(base);
   check('default 142-degree profile',await evaluate('__cz6a.profile==="retrograde-142" && Math.abs(__cz6a.meta.inc-142)<.01'));
   check('nominal sunlight pickup',await evaluate('Math.abs(__cz6a.jelly().pickup.met-106.068932)<.1'));
-  check('night-side visibility present',await evaluate('__cz6a.visInfo().nonempty>0'));
+  check('visibility envelope and Twilight jellyfish panel removed',await evaluate('!__cz6a.groups.visGroup && !document.getElementById("jelly") && !document.body.innerText.includes("Twilight jellyfish") && !document.getElementById("legend").textContent.includes("envelope")'));
+  check('15-degree circle is green and enabled by default',await evaluate('__cz6a.state.show.fp && document.getElementById("o-fp").checked && __cz6a.footprint().visible && __cz6a.footprint().material.color.getHexString()==="199e70"'));
+  check('circle legend matches its green dashed style',await evaluate('(()=>{const s=getComputedStyle(document.querySelector("#legend>div:nth-child(2) span:first-child i"));return s.borderTopColor==="rgb(25, 158, 112)" && s.borderTopStyle==="dashed";})()'));
   check('two solid solar contours',await evaluate('__cz6a.groups.termGroup.children.every(x=>!x.material.dashed) && __cz6a.groups.termGroup.children[0].material.color.getHexString()==="ffd54f" && __cz6a.groups.termGroup.children[1].material.color.getHexString()==="4fc3f7"'));
   check('no Zhuque-specific user-facing text',await evaluate('!(/ZQ-2|TQ-12|SECO-1|circularisation|34′/.test(document.body.innerText))'));
   await shot('desktop.png');
   await evaluate('document.getElementById("o-jelly").click()');await delay(200);
-  check('jelly toggle does not hide ascent or visibility',await evaluate('!__cz6a.groups.jellyGroup.visible && __cz6a.groups.trajGroup.visible && __cz6a.groups.trajGroup.children.length>=2 && __cz6a.groups.visGroup.visible'));
-  await evaluate('__cz6a.setT0(39600)');await wait('__cz6a.visInfo() && !__cz6a.visInfo().pending');
+  check('jelly toggle does not hide ascent or 15-degree circle',await evaluate('!__cz6a.groups.jellyGroup.visible && __cz6a.groups.trajGroup.visible && __cz6a.groups.trajGroup.children.length>=2 && __cz6a.footprint().visible'));
+  await evaluate('__cz6a.setT0(39600)');
   check('T0 changes illumination',await evaluate('!__cz6a.jelly().pickup || Math.abs(__cz6a.jelly().pickup.met-106)>1'));
-  await evaluate('__cz6a.setT0(36900);document.getElementById("o-jelly").click()');await wait('__cz6a.visInfo() && !__cz6a.visInfo().pending');
+  await evaluate('__cz6a.setT0(36900);document.getElementById("o-jelly").click()');
+  await evaluate('document.getElementById("o-fp").click()');await wait('!__cz6a.footprint().visible');
+  check('15-degree circle can still be switched off',await evaluate('!__cz6a.state.show.fp && !__cz6a.footprint().visible'));
+  await evaluate('document.getElementById("o-fp").click()');await wait('__cz6a.footprint().visible');
   await evaluate('__cz6a.setMet(100);__cz6a.setPlaying(true)');await delay(400);await evaluate('__cz6a.setPlaying(false)');
   check('playback advances MET',await evaluate('__cz6a.state.met>100'));
   await evaluate('__cz6a.setMet(__cz6a.meta.insertion_met+1.5*__cz6a.meta.period_s)');await delay(200);
@@ -60,11 +66,13 @@ try{
   check('sky chart loads star data and pass geometry',await evaluate('document.querySelector(".skc-passes").textContent.length>0 && document.querySelector(".skc-hud").textContent.includes("AZ")'));
   await shot('sky-chart.png');await evaluate('__cz6a.sky.close();__cz6a.setMet(-90);document.getElementById("o-grid").click()');
   const url=await evaluate('__cz6a.shareURL()');await navigate(url);
-  check('share link restores negative MET and toggles',await evaluate('__cz6a.state.met===-90 && !__cz6a.state.show.grid && __cz6a.groups.visGroup.visible'));
+  check('share link restores negative MET and toggles',await evaluate('__cz6a.state.met===-90 && !__cz6a.state.show.grid && __cz6a.state.show.fp'));
   await navigate(base+'?t0=bad&met=NaN&exag=NaN&cam=1,2,0');
   check('malformed URL input safely defaults or clamps',await evaluate('__cz6a.state.t0===36900 && __cz6a.state.met===300 && __cz6a.camera.position.length()>=1.049'));
   await navigate(base+'?vis=0&exag=5');
-  check('obsolete layer and height URL controls are ignored',await evaluate('__cz6a.groups.visGroup.visible && !new URL(__cz6a.shareURL()).searchParams.has("vis") && !new URL(__cz6a.shareURL()).searchParams.has("exag")'));
+  check('obsolete layer and height URL controls are ignored',await evaluate('!__cz6a.groups.visGroup && !new URL(__cz6a.shareURL()).searchParams.has("vis") && !new URL(__cz6a.shareURL()).searchParams.has("exag")'));
+  await navigate(base+'?fp=0');
+  check('explicit circle-off link overrides the default',await evaluate('!__cz6a.state.show.fp && !document.getElementById("o-fp").checked && (!__cz6a.footprint() || !__cz6a.footprint().visible)'));
   await navigate(base);
   await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await delay(250);
   check('mobile page has no horizontal overflow',await evaluate('document.documentElement.scrollWidth<=innerWidth'));
@@ -75,6 +83,7 @@ try{
   await shot('mobile-sky-chart.png');
   await call('Emulation.setDeviceMetricsOverride',{width:320,height:740,deviceScaleFactor:1,mobile:true});await delay(200);
   check('320px viewport has no horizontal page overflow',await evaluate('document.documentElement.scrollWidth<=innerWidth'));
+  check('no visibility analysis or worker is loaded',!requests.some((url)=>/\/visibility(?:-worker)?\.js(?:[?#]|$)/.test(url)));
   check('no JavaScript or failed-resource errors',errors.length===0);
   const storageBlock=await call('Page.addScriptToEvaluateOnNewDocument',{source:'Object.defineProperty(window,"localStorage",{get(){throw new Error("Storage disabled by test");}})'});
   await navigate(base);check('blocked browser storage is tolerated',await evaluate('!!__cz6a && !document.getElementById("loading")'));
