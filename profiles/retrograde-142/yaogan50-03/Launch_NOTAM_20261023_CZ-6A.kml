@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Launch_NOTAM_2026</name>
+    <Style id="poly-000000-1200-77-normal">
+      <LineStyle>
+        <color>ff000000</color>
+        <width>1.2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>4d000000</color>
+        <fill>1</fill>
+        <outline>1</outline>
+      </PolyStyle>
+    </Style>
+    <Style id="poly-000000-1200-77-highlight">
+      <LineStyle>
+        <color>ff000000</color>
+        <width>1.8</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>4d000000</color>
+        <fill>1</fill>
+        <outline>1</outline>
+      </PolyStyle>
+    </Style>
+    <StyleMap id="poly-000000-1200-77">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#poly-000000-1200-77-normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#poly-000000-1200-77-highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+    <Placemark>
+      <name>20261023 CZ-6A Y A5283/26 1007-1028</name>
+      <description><![CDATA[10/17/2026 0934 A5283/26 NOTAMN<br>Q)ZLHW/QRDCA/IV/BO/W/000/999/3759N10744E012<br>A)ZLHW B)2610231007 C)2610231028 <br>E) A TEMPORARY DANGER AREA ESTABLISHED BOUNDED BY: <br>N380200E1072900-N380800E1075600-N375700E1080000-N375100E1073300,BAC<br>K TO START.VERTICAL LIMITS:SFC-UNL.<br>AIRCRAFT ARE FORBIDDEN TO FLY INTO THE AREA.<br>F)SFC G)UNL]]></description>
+      <styleUrl>#poly-000000-1200-77</styleUrl>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <tessellate>1</tessellate>
+            <coordinates>
+              107.483333,38.033333,0
+              107.55,37.85,0
+              108,37.95,0
+              107.933333,38.133333,0
+              107.483333,38.033333,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+  </Document>
+</kml>

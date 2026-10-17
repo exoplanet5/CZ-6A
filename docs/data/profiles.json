@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "default_profile": "retrograde-142",
+  "profiles": [
+    {
+      "id": "retrograde-142",
+      "label": "Retrograde · 142°",
+      "family": "retrograde",
+      "default_mission": "yaogan50-03",
+      "missions": [
+        {
+          "id": "yaogan50-03",
+          "label": "Yaogan-50 03 · 23 Oct 2026",
+          "file": "data/yaogan50-03.json"
+        }
+      ]
+    }
+  ],
+  "supported_families": [
+    "retrograde",
+    "polar",
+    "sso",
+    "low-inclination"
+  ]
+}

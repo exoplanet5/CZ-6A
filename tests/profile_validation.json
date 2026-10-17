@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "profile": "retrograde-142",
+  "mission": "yaogan50-03",
+  "checks": {
+    "track_arrays_finite_and_uniform": true,
+    "exact_shared_insertion_endpoint": true,
+    "exact_1_5_keplerian_period_duration": true,
+    "wgs84_roundtrip": true,
+    "solar_km_units_and_full_t0_prelaunch_coverage": true,
+    "nominal_pickup_within_0_1_s": true,
+    "shadow_before_and_sunlight_after_pickup": true,
+    "only_authorized_events_and_booster_zone": true,
+    "sanitized_metadata": true
+  },
+  "source": {
+    "source_samples": 3221,
+    "source_interval_met_s": [
+      0.0,
+      12975.094109
+    ],
+    "interpolation": "cubic Hermite in ECEF using transformed source velocities",
+    "source_frame_roundtrip_max_km": 7.066564569075284e-06
+  },
+  "tracks": {
+    "ascent": {
+      "samples": 781,
+      "met0": 0,
+      "dt_s": 0.9999726561107091,
+      "end_met_s": 779.978671766353,
+      "wgs84_roundtrip_max_km": 3.178612587362425e-06
+    },
+    "orbit": {
+      "samples": 1830,
+      "met0": 779.978671766353,
+      "dt_s": 5.000730769710857,
+      "end_met_s": 9926.315249567511,
+      "wgs84_roundtrip_max_km": 7.026165803836267e-06
+    }
+  },
+  "orbit_duration_s": 9146.336577801158,
+  "orbit_duration_periods": 1.5,
+  "insertion_join_ecef_km": 0.0,
+  "sun": {
+    "samples": 536,
+    "dt_s": 30,
+    "start_utc": "2026-10-23T09:19:00Z",
+    "end_utc": "2026-10-23T13:46:30Z",
+    "required_end_utc": "2026-10-23T13:46:26.315250Z",
+    "minimum_prelaunch_met_s": -600,
+    "kernel": {
+      "file": "de440s.bsp",
+      "sha256": "c1c7feeab882263fc493a9d5a5b2ddd71b54826cdf65d8d17a76126b260a49f2"
+    }
+  },
+  "nominal_pickup": {
+    "reference_met_s": 106.06893245155386,
+    "ecef_linear_met_s": 106.0686361362031,
+    "geodetic_linear_met_s": 106.06863020270161,
+    "ecef_linear_error_s": -0.00029631535076646287,
+    "geodetic_linear_error_s": -0.00030224885225038634
+  },
+  "dependencies": {
+    "numpy": "2.4.2",
+    "scipy": "1.17.1",
+    "pyproj": "3.7.2",
+    "skyfield": "1.54",
+    "jplephem": "2.24"
+  },
+  "inputs_sha256": {
+    "metadata.json": "81483c041b276b3fe1f0e1a859c9fcb20965d1673c6031a5b84be39b2baab250",
+    "Yaogan-50_03_trajectory.csv": "09dc524f8bb3fc7e739b8e91e23bcbb96d1dce84133f93f8e47dacea0d2b2e0c",
+    "Yaogan-50_03_prelaunch.tle": "6a4b784f4c614fd25b8d22a9786347bd7206b17ea8088baff9e3eb1be9c70e5c",
+    "Launch_NOTAM_20261023_CZ-6A.kml": "474bbb9dc100868186622b95feb2564104939ab0b1a270c87a3c5726632f1d12"
+  },
+  "outputs_sha256": {
+    "yaogan50-03.json": "6b8d6cb5c9d61ebd74e1c3706f5cfa4c3bc71055e454df2598af98771db5add4",
+    "profiles.json": "e065090593e7465bb27a89c533a4638ffc35f8e61af272a1bb4661d830511937"
+  }
+}

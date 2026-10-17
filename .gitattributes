@@ -1,0 +1,2 @@
+# Preserve archived source bytes for reproducibility checks.
+profiles/**/*.csv -text whitespace=cr-at-eol

@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "profile": {
+    "id": "retrograde-142",
+    "label": "Retrograde · 142°",
+    "family": "retrograde",
+    "default_mission": "yaogan50-03"
+  },
+  "mission": {
+    "id": "yaogan50-03",
+    "label": "Yaogan-50 03 · 23 Oct 2026",
+    "file": "data/yaogan50-03.json"
+  },
+  "meta": {
+    "title": "CZ-6A Launch visibility",
+    "vehicle": "CZ-6A",
+    "mission": "Yaogan-50 03",
+    "date": "2026-10-23",
+    "pad": [111.589299, 38.863011],
+    "pad_alt": 1.5,
+    "pad_name": "Taiyuan LC-9A",
+    "t0_default": "10:15:00",
+    "t0_min": "09:30:00",
+    "t0_max": "11:00:00",
+    "t0_presets": [{"label": "Nominal 10:15", "time": "10:15:00"}],
+    "insertion_met": 779.978671766353,
+    "period_s": 6097.557718534105,
+    "orbit_revolutions": 1.5,
+    "inc": 142.00171687564796,
+    "perigee_km": 714.0823188244867,
+    "apogee_km": 957.2169548078036,
+    "az": 255.135827734821,
+    "views": [
+      ["Global", 100, 12, 3.6],
+      ["Taiyuan", 111.589299, 37.36, 1.22],
+      ["Launch corridor", 99, 34, 2.15],
+      ["West China", 99, 33, 2.1]
+    ],
+    "visibility": {
+      "extent": [75, 118, 20, 45],
+      "grid_step_deg": 0.2,
+      "time_step_s": 2,
+      "levels": [15]
+    },
+    "notes": [
+      "Provisional repeat-flight model, not an observed or uniquely determined trajectory. The March Yaogan-50 02 reconstruction and precursor orbit family supply conditional priors, not October observations or prediction confidence limits.",
+      "The dogleg is attributed to stage 1 and NOTAM A5283/26 to the booster drop zone. This is a stage-attribution correction only: the numerical surrogate's earlier staging boundary, thrust and steering assumptions were NOT refitted. No timed dogleg, staging, separation or impact event is claimed.",
+      "NOTAM 10:07–10:28 UTC is a hazard-area activation interval, not launch-time limits or an insertion constraint. The 09:30–11:00 UTC selector is an exploratory range, not an announced launch window.",
+      "Shifting T0 reuses the same Earth-fixed (ECEF) trajectory and changes the solar geometry; it does not reoptimize dynamics or propagate a newly fitted orbit. The nominal synthetic TLE remains a reference, not a new catalog observation.",
+      "Source positions and velocities use a TEME-like frame with GMST rotation, UTC approximating UT1 and no polar motion. The exporter converts to ECEF and resamples with cubic Hermite interpolation; it does not reoptimize or integrate a new trajectory.",
+      "The source dynamics include central gravity and J2, with a kinematic lower ascent and an assumed finite-thrust segment. Higher harmonics, post-insertion maneuvers, fragmentation and debris descent are not modeled.",
+      "Altitude samples are WGS84 geodetic ellipsoidal heights in km. Perigee and apogee are orbital radii minus the WGS84 equatorial radius; these are not the same altitude convention.",
+      "Sunlight uses the geometric Sun centre from the shared DE440s ephemeris and WGS84 ellipsoidal Earth occultation. The solar table is linearly interpolated in ECEF at 30-second cadence.",
+      "The 15° visibility envelope is sampled during sunlit ascent for sea-level observers with Sun-centre altitude ≤0°, then clipped to the observer night side at the insertion reference epoch. Post-insertion orbit tracks do not enlarge the ascent envelope.",
+      "No brightness, atmospheric refraction or extinction, weather, terrain, finite solar-disc emergence, or plume size is modeled. Geometric visibility is not a claim of naked-eye detection.",
+      "The 1.5 revolutions shown are exactly 1.5 times the insertion Keplerian period in elapsed time, not a claim of an exact J2 ground-track repeat or true-anomaly recurrence.",
+      "The synthetic prelaunch TLE uses placeholder catalog number 00000 and is explicitly NOT OBSERVED. It is fitted to the nominal numerical orbit; some TLE consumers reject this placeholder."
+    ]
+  },
+  "source": {
+    "status": "CONDITIONAL PRE-LAUNCH MODEL — NOT AN OBSERVED OR UNIQUE SOLUTION",
+    "nominal_launch_utc": "2026-10-23T10:15:00Z",
+    "frame": "TEME-like equator/equinox of date; GMST rotation with UTC used as UT1; not J2000",
+    "earth_rotation_rad_s": 0.000072921158553,
+    "raan_rate_deg_per_min": 0.2506844773374723,
+    "nominal_pickup_met_s": 106.06893245155386,
+    "files": {
+      "trajectory": "Yaogan-50_03_trajectory.csv",
+      "tle": "Yaogan-50_03_prelaunch.tle",
+      "notam": "Launch_NOTAM_20261023_CZ-6A.kml"
+    },
+    "sha256": {
+      "Yaogan-50_03_trajectory.csv": "09dc524f8bb3fc7e739b8e91e23bcbb96d1dce84133f93f8e47dacea0d2b2e0c",
+      "Yaogan-50_03_prelaunch.tle": "6a4b784f4c614fd25b8d22a9786347bd7206b17ea8088baff9e3eb1be9c70e5c",
+      "Launch_NOTAM_20261023_CZ-6A.kml": "474bbb9dc100868186622b95feb2564104939ab0b1a270c87a3c5726632f1d12"
+    },
+    "reference_products": [
+      {"file": "Yaogan-50_03_solution.json", "sha256": "8eafedbe6909f7f55e79e5d655ee1804f72f5ac71e95631e1ad5941feec2718e"},
+      {"file": "README.md", "sha256": "ed4d07ac5ff7bc485d1caf1ea4595c6bfdc58ebe1acb03411b94082dfbb4f9ba"},
+      {"file": "ascent_visibility.py", "sha256": "20c9f13bb7d25f9180c54a7aa64890c16207f1ed19982952762ac92a9055733c"},
+      {"file": "ascent_visibility.json", "sha256": "efe9432cde84ced4fb0eba70e237c38c0e1e41ca0254c277e2401288a47e46ca"}
+    ],
+    "reference_products_required_to_export": false,
+    "privacy": "Only selected model parameters and basename/hash provenance are retained; no absolute source paths or raw Space-Track records are included."
+  },
+  "zone": {
+    "key": "boosters",
+    "id": "A5283/26",
+    "role": "boosters",
+    "color": "#eeeeee",
+    "t0": "1007",
+    "t1": "1028",
+    "centroid": [107.7416665, 37.9916665],
+    "dist_km": 349.59,
+    "bearing": 255.135827734821,
+    "desc": "Booster drop zone; no impact trajectory or timing modeled"
+  },
+  "sun_sampling": {
+    "kernel": "de440s.bsp",
+    "dt_s": 30,
+    "minimum_prelaunch_met_s": -600,
+    "padding_s": 60,
+    "model": "DE440s geometric Sun centre; WGS84 occultation"
+  }
+}

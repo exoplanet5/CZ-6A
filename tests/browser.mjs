@@ -1,0 +1,84 @@
+import {spawn} from 'node:child_process';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+
+const base=process.env.VIEWER_URL||'http://127.0.0.1:8766/';
+const chromePath=process.env.CHROME||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const output=new URL('../.test-artifacts/',import.meta.url);await fs.mkdir(output,{recursive:true});
+const profile=await fs.mkdtemp(path.join(os.tmpdir(),'cz6a-browser-'));
+const chrome=spawn(chromePath,['--headless=new','--remote-debugging-port=0',`--user-data-dir=${profile}`,'--no-first-run','--no-default-browser-check','about:blank'],{stdio:'ignore'});
+const delay=(ms)=>new Promise((r)=>setTimeout(r,ms));
+const errors=[],checks=[];let ws;
+try{
+  let port;
+  for(let i=0;i<200;i++){try{port=+(await fs.readFile(path.join(profile,'DevToolsActivePort'),'utf8')).split('\n')[0];break;}catch{await delay(100);}}
+  assert.ok(port,'Chrome debugging endpoint');
+  const targets=await(await fetch(`http://127.0.0.1:${port}/json/list`)).json();
+  ws=new WebSocket(targets.find((t)=>t.type==='page').webSocketDebuggerUrl);await new Promise((r,j)=>{ws.onopen=r;ws.onerror=j;});
+  let id=0;const waiting=new Map();
+  ws.onmessage=({data})=>{const m=JSON.parse(data);if(m.id){const p=waiting.get(m.id);if(p){waiting.delete(m.id);m.error?p.reject(new Error(m.error.message)):p.resolve(m.result);}}
+    if(m.method==='Runtime.exceptionThrown')errors.push(m.params.exceptionDetails.exception?.description||m.params.exceptionDetails.text);
+    if(m.method==='Runtime.consoleAPICalled'&&m.params.type==='error')errors.push(m.params.args.map((a)=>a.value||a.description).join(' '));
+    if(m.method==='Network.responseReceived'&&m.params.response.status>=400)errors.push(`${m.params.response.status} ${m.params.response.url}`);
+  };
+  const call=(method,params={})=>new Promise((resolve,reject)=>{const n=++id;waiting.set(n,{resolve,reject});ws.send(JSON.stringify({id:n,method,params}));});
+  const evaluate=async(expression)=>{const r=await call('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw new Error(r.exceptionDetails.exception?.description||r.exceptionDetails.text);return r.result.value;};
+  async function wait(expression,timeout=30000){const start=Date.now();while(Date.now()-start<timeout){if(await evaluate(expression))return;await delay(100);}throw new Error('Timed out: '+expression);}
+  async function navigate(url){await call('Page.navigate',{url});await wait('!!window.__cz6a && !document.getElementById("loading") && !!window.__cz6a.visInfo() && !window.__cz6a.visInfo().pending');assert.equal(await evaluate('window.__cz6a.visInfo().error||null'),null);}
+  async function shot(name){await delay(300);const r=await call('Page.captureScreenshot',{format:'png'});await fs.writeFile(new URL(name,output),Buffer.from(r.data,'base64'));}
+  const check=(name,ok)=>{assert.ok(ok,name);checks.push(name);};
+  await call('Runtime.enable');await call('Page.enable');await call('Network.enable');
+  await call('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
+  await navigate(base);
+  check('default 142-degree profile',await evaluate('__cz6a.profile==="retrograde-142" && Math.abs(__cz6a.meta.inc-142)<.01'));
+  check('nominal sunlight pickup',await evaluate('Math.abs(__cz6a.jelly().pickup.met-106.068932)<.1'));
+  check('night-side visibility present',await evaluate('__cz6a.visInfo().nonempty>0'));
+  check('two solid solar contours',await evaluate('__cz6a.groups.termGroup.children.every(x=>!x.material.dashed) && __cz6a.groups.termGroup.children[0].material.color.getHexString()==="ffd54f" && __cz6a.groups.termGroup.children[1].material.color.getHexString()==="4fc3f7"'));
+  check('no Zhuque-specific user-facing text',await evaluate('!(/ZQ-2|TQ-12|SECO-1|circularisation|34′/.test(document.body.innerText))'));
+  await shot('desktop.png');
+  await evaluate('document.getElementById("o-jelly").click()');await delay(200);
+  check('jelly toggle does not hide ascent or visibility',await evaluate('!__cz6a.groups.jellyGroup.visible && __cz6a.groups.trajGroup.visible && __cz6a.groups.trajGroup.children.length>=2 && __cz6a.groups.visGroup.visible'));
+  await evaluate('__cz6a.setT0(39600)');await wait('__cz6a.visInfo() && !__cz6a.visInfo().pending');
+  check('T0 changes illumination',await evaluate('!__cz6a.jelly().pickup || Math.abs(__cz6a.jelly().pickup.met-106)>1'));
+  await evaluate('__cz6a.setT0(36900);document.getElementById("o-jelly").click()');await wait('__cz6a.visInfo() && !__cz6a.visInfo().pending');
+  await evaluate('__cz6a.setMet(100);__cz6a.setPlaying(true)');await delay(400);await evaluate('__cz6a.setPlaying(false)');
+  check('playback advances MET',await evaluate('__cz6a.state.met>100'));
+  await evaluate('__cz6a.setMet(__cz6a.meta.insertion_met+1.5*__cz6a.meta.period_s)');await delay(200);
+  check('full 1.5-revolution endpoint renders',await evaluate('document.getElementById("status").textContent.includes("1.50 / 1.5")'));
+  await evaluate('document.querySelector("[data-view=\\"0\\"]").click()');await delay(1400);await shot('global-orbit.png');
+  check('global camera preset',await evaluate('Math.abs(__cz6a.camera.position.length()-3.6)<.01'));
+  await evaluate('document.querySelector("[data-view=\\"2\\"]").click()');await delay(1400);
+  check('visibility checkbox and height slider removed',await evaluate('!document.getElementById("o-vis") && !document.getElementById("exag")'));
+  check('configuration and launch-time explanations removed',await evaluate('!document.getElementById("family-note") && !document.getElementById("ctl").textContent.includes("Scenario time range")'));
+  check('model notes are concise and link to full sources',await evaluate('document.getElementById("about").textContent.length<200 && !!document.querySelector("#about a[href*=scientific-limitations]")'));
+  await evaluate('__cz6a.setMet(300)');
+  check('trajectory uses true-scale height',await evaluate('(()=>{const p=__cz6a.groups.trajGroup.children[0].geometry.attributes.instanceStart;return Math.abs(Math.hypot(p.getX(0),p.getY(0),p.getZ(0))-(1+__cz6a.shipAt(0).alt/6378.137))<1e-6;})()'));
+  await evaluate('document.getElementById("skybtn").click()');
+  await wait('!!document.querySelector(".skw") && document.querySelector(".skw-title .sub").textContent.includes("Chengdu")');
+  check('sky chart loads star data and pass geometry',await evaluate('document.querySelector(".skc-passes").textContent.length>0 && document.querySelector(".skc-hud").textContent.includes("AZ")'));
+  await shot('sky-chart.png');await evaluate('__cz6a.sky.close();__cz6a.setMet(-90);document.getElementById("o-grid").click()');
+  const url=await evaluate('__cz6a.shareURL()');await navigate(url);
+  check('share link restores negative MET and toggles',await evaluate('__cz6a.state.met===-90 && !__cz6a.state.show.grid && __cz6a.groups.visGroup.visible'));
+  await navigate(base+'?t0=bad&met=NaN&exag=NaN&cam=1,2,0');
+  check('malformed URL input safely defaults or clamps',await evaluate('__cz6a.state.t0===36900 && __cz6a.state.met===300 && __cz6a.camera.position.length()>=1.049'));
+  await navigate(base+'?vis=0&exag=5');
+  check('obsolete layer and height URL controls are ignored',await evaluate('__cz6a.groups.visGroup.visible && !new URL(__cz6a.shareURL()).searchParams.has("vis") && !new URL(__cz6a.shareURL()).searchParams.has("exag")'));
+  await navigate(base);
+  await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});await delay(250);
+  check('mobile page has no horizontal overflow',await evaluate('document.documentElement.scrollWidth<=innerWidth'));
+  await shot('mobile.png');await evaluate('document.querySelector("[data-panel=ctl]").click()');await delay(100);
+  check('mobile controls have 16px gutters',await evaluate('(()=>{const r=document.getElementById("ctl").getBoundingClientRect();return r.left>=16 && r.right<=innerWidth-16 && getComputedStyle(document.getElementById("ctl")).display!=="none";})()'));
+  await shot('mobile-controls.png');await evaluate('document.getElementById("skybtn").click()');await wait('document.querySelector(".skw-title .sub")?.textContent.includes("Chengdu")');
+  check('mobile sky chart stays within viewport',await evaluate('(()=>{const r=document.querySelector(".skw").getBoundingClientRect();return r.left>=16 && r.right<=innerWidth-16;})()'));
+  await shot('mobile-sky-chart.png');
+  await call('Emulation.setDeviceMetricsOverride',{width:320,height:740,deviceScaleFactor:1,mobile:true});await delay(200);
+  check('320px viewport has no horizontal page overflow',await evaluate('document.documentElement.scrollWidth<=innerWidth'));
+  check('no JavaScript or failed-resource errors',errors.length===0);
+  const storageBlock=await call('Page.addScriptToEvaluateOnNewDocument',{source:'Object.defineProperty(window,"localStorage",{get(){throw new Error("Storage disabled by test");}})'});
+  await navigate(base);check('blocked browser storage is tolerated',await evaluate('!!__cz6a && !document.getElementById("loading")'));
+  await call('Page.removeScriptToEvaluateOnNewDocument',{identifier:storageBlock.identifier});
+  const report={checks_passed:checks.length,checks,errors};await fs.writeFile(new URL('browser-validation.json',output),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
+}catch(error){console.error(JSON.stringify({browser_errors:errors},null,2));throw error;
+}finally{ws?.close();chrome.kill('SIGTERM');if(chrome.exitCode===null)await new Promise((r)=>chrome.once('exit',r));await fs.rm(profile,{recursive:true,force:true});}
