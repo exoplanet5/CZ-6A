@@ -19,6 +19,7 @@ Use an HTTP server, not a `file://` URL: the viewer loads ES modules, JSON and l
 - Change **T0** to recompute Sun geometry, sunlight pickup and the synthetic TLE orientation. The supplied Earth-fixed track stays unchanged.
 - Scrub MET, play at 1–300×, or click a timeline time. Space toggles playback; arrows seek 10 s, or 300 s with Shift, when a form control is not focused.
 - Drag the globe to rotate and scroll to zoom. Camera presets and vehicle-follow mode are available. Hover the trajectory for MET/altitude; click to seek.
+- The city layer includes **110 China city centres**: all mainland provincial capitals, major regional/coastal cities and additional launch-corridor cities. Three zoom tiers reveal more cities as you move closer, with small neutral dots and collision-checked labels. City coordinates are approximate map/observer defaults; use a specific site coordinate for precise local viewing.
 - Click city labels or open **Observer sky chart** and enter coordinates. It shows ascent and orbital passes, Sun/Moon, stars, and optional constellation/Milky Way layers.
 - Toggle the sunlit-plume illustration, NOTAM polygons, ground tracks, city lights and solar contours. Turning off the plume does not hide the ascent.
 - **Borders & regions** is enabled by default: country borders worldwide, with province/region lines **only in China**. Other countries have no internal state/province/region lines. Country borders are stronger than regional lines; remaining source-classified disputed/control lines are dashed. The selected land-boundary worldview is **China claims**, including the sourced southern Tibet claim; the footer identifies that view. The checkbox or `?borders=0` hides both administrative levels. These are generalized cartographic reference lines, not authoritative sovereignty boundaries.
@@ -85,6 +86,7 @@ The exporter resamples the existing solution; it does not fit or integrate a new
 
 - `docs/index.html`: static page and styling.
 - `docs/js/app.js`: scene and controls; `profile.js`: validation, tracks and geometric sunlight; `astro.js`, `skychart.js`: astronomy and observer charts. `visibility*.js` are retained source-model analysis helpers, not loaded by the viewer.
+- `docs/js/cities.js`: curated city-centre catalog and zoom-tier thresholds, shared by the globe and city-label sky-chart links.
 - `docs/data/profiles.json`: profile/mission manifest, with explicit defaults.
 - `docs/data/boundaries{,-medium,-fine}.json`: three consistent detail levels for worldwide country borders and China-only regional lines. `boundaries.js` validates and tessellates independent lines; `boundary-layer.js` renders screen-space vectors with zoom-dependent detail.
 - `docs/js/map-lod.js`, `map-tiles.js`: screen-space tile selection, native-detail cap, bounded request/cache management and patch rendering. `docs/tex/tiles/manifest.json` records every tile hash and the source image hash; image attribution is in `docs/tex/TILES-LICENSE.txt`.

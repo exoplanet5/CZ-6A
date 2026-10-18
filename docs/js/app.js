@@ -10,6 +10,7 @@ import {createSkyChart} from './skychart.js';
 import {validateBoundaries} from './boundaries.js';
 import {createMapTiles} from './map-tiles.js';
 import {createBoundaryLayer} from './boundary-layer.js';
+import {CITIES,cityInRange} from './cities.js';
 
 const $ = (id) => document.getElementById(id);
 const C = {sun:'#ffd54f',accent:'#4fc3f7',ink:'#e8eaed',dim:'#9aa4ae',ascent:'#d95926',orbit:'#3987e5',footprint:'#199e70'};
@@ -109,8 +110,7 @@ async function start() {
   const padLabel=label(M.pad_name);padLabel.position.copy(pad.position);eventGroup.add(padLabel);
   for(const z of data.zones){const pts=[];for(let i=0;i<z.ring.length-1;i++){const a=z.ring[i],b=z.ring[i+1],dl=((b[0]-a[0]+540)%360)-180,n=Math.max(1,Math.ceil(Math.max(Math.abs(dl),Math.abs(b[1]-a[1]))/.1));for(let j=0;j<n;j++)pts.push(...A.llToVec(a[0]+dl*j/n,a[1]+(b[1]-a[1])*j/n,1.0015));}pts.push(...A.llToVec(...z.ring.at(-1),1.0015));zoneGroup.add(line(pts,{color:z.color,width:1.5}));
     const o=label(`${z.role==='boosters'?'Booster':z.role} drop zone\n${z.id} · ${z.t0}–${z.t1} UTC`,'zone below');o.position.set(...A.llToVec(...z.centroid,1.002));zoneLabels.add(o);}
-  const CITIES=[['Beijing',116.4,39.9,1],['Shanghai',121.5,31.2,1],['Taiyuan',112.55,37.87,2],['Hohhot',111.7,40.8,2],['Chengdu',104.07,30.66,1],['Chongqing',106.55,29.56,1],['Lhasa',91.13,29.65,1],['Ürümqi',87.6,43.8,1],['Kunming',102.71,25.04,1],["Xi'an",108.94,34.34,1],['Guangzhou',113.3,23.1,1],['Wuhan',114.3,30.6,1],['Lanzhou',103.83,36.06,1],['Xining',101.78,36.62,1],['Yinchuan',106.23,38.49,2],['Jiuquan',98.49,39.73,1],['Dunhuang',94.66,40.14,2],['Zhangye',100.45,38.93,2],['Golmud',94.9,36.4,1],['Yushu',97.01,33,2],['Chamdo',97.17,31.14,2],['Hong Kong',114.2,22.3,2],['Kathmandu',85.3,27.7,1],['New Delhi',77.2,28.6,1],['Hanoi',105.8,21,1]];
-  for(const [name,lon,lat,tier] of CITIES){const p=A.llToVec(lon,lat,1.001),dot=sprite(dotTex,.007);dot.position.set(...p);dot.userData.tier=tier;cityGroup.add(dot);const o=label(name,'city');o.position.set(...p);o.userData.tier=tier;o.element.title=`Sky chart over ${name}`;o.element.tabIndex=0;o.element.setAttribute('role','button');o.element.addEventListener('click',()=>openSky({name,lon,lat}));o.element.addEventListener('keydown',(e)=>{if(e.key==='Enter')openSky({name,lon,lat});});cityGroup.add(o);}
+  for(const [name,lon,lat,tier] of CITIES){const p=A.llToVec(lon,lat,1.001),dot=sprite(dotTex,.007);dot.position.set(...p);dot.userData={tier,city:name};cityGroup.add(dot);const o=label(name,'city');o.position.set(...p);o.userData={tier,city:name};o.element.title=`Sky chart over ${name}`;o.element.tabIndex=0;o.element.setAttribute('role','button');o.element.addEventListener('click',()=>openSky({name,lon,lat}));o.element.addEventListener('keydown',(e)=>{if(e.key==='Enter')openSky({name,lon,lat});});cityGroup.add(o);}
   const pickup=sprite(starTex,.025),pickupLabel=label('','below');scene.add(pickup,pickupLabel);
   function buildJellyLayer(){clear(jellyGroup);let run=[];
     const flush=()=>{if(run.length>=6){jellyGroup.add(line(run,{color:C.sun,width:8,opacity:.16}),line(run,{color:C.sun,width:2.6}));}run=[];};
@@ -222,7 +222,8 @@ async function start() {
     boundaryLayer.update(now,view.clientWidth,view.clientHeight,renderer.getPixelRatio(),state.show.borders);
     for(const g of [zoneLabels,eventGroup])for(const o of g.children)if(o.isCSS2DObject)o.visible=state.show.labels&&visible(o.position);
     pickup.visible=!!J.pickup&&state.show.jelly;pickupLabel.visible=pickup.visible&&state.show.labels&&visible(pickup.position);shipLabel.visible=state.show.labels&&visible(ship.position);
-    for(const o of cityGroup.children)o.visible=visible(o.position)&&camera.position.length()<(o.userData.tier===1?2.9:1.75)&&(!o.isCSS2DObject||state.show.labels);
+    const cityDistance=camera.position.length();
+    for(const o of cityGroup.children)o.visible=visible(o.position)&&cityInRange(o.userData.tier,cityDistance)&&(!o.isCSS2DObject||state.show.labels);
     renderer.render(scene,camera);labels.render(scene,camera);declutterLabels();if(sky.isOpen()&&now-lastUI>80)sky.render();if(now-lastUI>100){lastUI=now;updateUI(s);}requestAnimationFrame(frame);
   }
   function resize(){const w=view.clientWidth,h=view.clientHeight,oldScale=cameraScale();camera.aspect=w/h;const d=camera.position.length();if(d>0)camera.position.setLength(clamp(1+(d-1)*cameraScale()/oldScale,1.05,14));renderer.setSize(w,h);labels.setSize(w,h);camera.updateProjectionMatrix();for(const m of materials)m.resolution.set(w,h);}
@@ -233,5 +234,5 @@ async function start() {
   requestAnimationFrame((t)=>{frame(t);$('loading').remove();});
   const want=qs.get('sky'),city=CITIES.find((c)=>c[0].toLowerCase()===want?.toLowerCase()),ll=(want||'').split(',').map(Number);
   if(city)openSky({name:city[0],lon:city[1],lat:city[2]});else if(ll.length===2&&ll.every(Number.isFinite)&&Math.abs(ll[0])<=90&&Math.abs(ll[1])<=180)openSky({lat:ll[0],lon:ll[1],custom:true});
-  window.__cz6a={state,setMet,setT0,setPlaying,flyTo,camera,shareURL,sky,shipAt,jelly:()=>J,footprint:()=>fp,boundaryCoverage:boundaryData.coverage,mapOverlay:ovCanvas,mapLOD:mapTiles,boundaries:boundaryLayer,meta:M,groups:{trajGroup,jellyGroup,termGroup},profile:profile.id,mission:entry.id};
+  window.__cz6a={state,setMet,setT0,setPlaying,flyTo,camera,shareURL,sky,shipAt,jelly:()=>J,footprint:()=>fp,boundaryCoverage:boundaryData.coverage,mapOverlay:ovCanvas,mapLOD:mapTiles,boundaries:boundaryLayer,meta:M,groups:{trajGroup,jellyGroup,termGroup,cityGroup},profile:profile.id,mission:entry.id};
 }
