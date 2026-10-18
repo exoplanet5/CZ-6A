@@ -10,7 +10,7 @@ const output=new URL('../.test-artifacts/',import.meta.url);await fs.mkdir(outpu
 const profile=await fs.mkdtemp(path.join(os.tmpdir(),'cz6a-browser-'));
 const chrome=spawn(chromePath,['--headless=new','--remote-debugging-port=0',`--user-data-dir=${profile}`,'--no-first-run','--no-default-browser-check','about:blank'],{stdio:'ignore'});
 const delay=(ms)=>new Promise((r)=>setTimeout(r,ms));
-const errors=[],checks=[],requests=[],requestURLs=new Map();let ws;
+const errors=[],expectedTileFailures=[],checks=[],requests=[],requestURLs=new Map();let ws,blockingTiles=false;
 try{
   let port;
   for(let i=0;i<200;i++){try{port=+(await fs.readFile(path.join(profile,'DevToolsActivePort'),'utf8')).split('\n')[0];break;}catch{await delay(100);}}
@@ -20,14 +20,14 @@ try{
   let id=0;const waiting=new Map();
   ws.onmessage=({data})=>{const m=JSON.parse(data);if(m.id){const p=waiting.get(m.id);if(p){waiting.delete(m.id);m.error?p.reject(new Error(m.error.message)):p.resolve(m.result);}}
     if(m.method==='Network.requestWillBeSent'){requests.push(m.params.request.url);requestURLs.set(m.params.requestId,m.params.request.url);}
-    if(m.method==='Network.loadingFailed')errors.push(`${m.params.errorText} ${requestURLs.get(m.params.requestId)||''}`);
+    if(m.method==='Network.loadingFailed'){const text=`${m.params.errorText} ${requestURLs.get(m.params.requestId)||''}`;(blockingTiles&&text.includes('/tex/tiles/')?expectedTileFailures:errors).push(text);}
     if(m.method==='Runtime.exceptionThrown')errors.push(m.params.exceptionDetails.exception?.description||m.params.exceptionDetails.text);
     if(m.method==='Runtime.consoleAPICalled'&&m.params.type==='error')errors.push(m.params.args.map((a)=>a.value||a.description).join(' '));
     if(m.method==='Network.responseReceived'&&m.params.response.status>=400)errors.push(`${m.params.response.status} ${m.params.response.url}`);
   };
   const call=(method,params={})=>new Promise((resolve,reject)=>{const n=++id;waiting.set(n,{resolve,reject});ws.send(JSON.stringify({id:n,method,params}));});
   const evaluate=async(expression)=>{const r=await call('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(r.exceptionDetails)throw new Error(r.exceptionDetails.exception?.description||r.exceptionDetails.text);return r.result.value;};
-  async function wait(expression,timeout=30000){const start=Date.now();while(Date.now()-start<timeout){if(await evaluate(expression))return;await delay(100);}throw new Error('Timed out: '+expression);}
+  async function wait(expression,timeout=30000){const start=Date.now();while(Date.now()-start<timeout){if(await evaluate(expression))return;await delay(100);}throw new Error('Timed out: '+expression+' '+await evaluate('JSON.stringify({imagery:window.__cz6a?.mapLOD?.stats(),boundaries:window.__cz6a?.boundaries?.stats()})'));}
   async function navigate(url){await call('Page.navigate',{url});await wait('!!window.__cz6a && !document.getElementById("loading")');}
   async function shot(name){await delay(300);const r=await call('Page.captureScreenshot',{format:'png'});await fs.writeFile(new URL(name,output),Buffer.from(r.data,'base64'));}
   const check=(name,ok)=>{assert.ok(ok,name);checks.push(name);};
@@ -43,15 +43,29 @@ try{
   check('no Zhuque-specific user-facing text',await evaluate('!(/ZQ-2|TQ-12|SECO-1|circularisation|34′/.test(document.body.innerText))'));
   check('country and regional boundaries are enabled by default',await evaluate('__cz6a.state.show.borders && document.getElementById("o-borders").checked'));
   check('worldwide regional data includes China provinces',await evaluate('__cz6a.boundaryCoverage.region_line_counts.CHN>=50 && Object.keys(__cz6a.boundaryCoverage.region_line_counts).length>150'));
-  const boundaryPixels=await evaluate('__cz6a.mapOverlay.getContext("2d").getImageData(2900,390,690,480).data.reduce((s,v)=>s+v,0)');
+  await wait('__cz6a.mapLOD.stats().active===0 && __cz6a.mapLOD.stats().visible>0 && __cz6a.boundaries.stats().level==="medium"');
+  check('regional view loads only visible higher-resolution image tiles',await evaluate('__cz6a.mapLOD.stats().worldWidth>4096 && __cz6a.mapLOD.stats().wanted<=32 && __cz6a.mapLOD.stats().visible>0'));
+  check('borders are screen-space vectors in the China-claims view',await evaluate('__cz6a.boundaries.group.children[0].children.every(x=>x.isLineSegments2) && __cz6a.boundaries.stats().worldview==="China claims" && document.getElementById("credit").textContent.includes("China-claims")'));
+  const mapShot=async()=>Buffer.from((await call('Page.captureScreenshot',{format:'png',clip:{x:420,y:160,width:600,height:600,scale:1}})).data,'base64');
+  const boundaryPixels=await mapShot();
   await shot('desktop.png');
-  await evaluate('document.getElementById("o-borders").click()');
-  const withoutBoundaryPixels=await evaluate('__cz6a.mapOverlay.getContext("2d").getImageData(2900,390,690,480).data.reduce((s,v)=>s+v,0)');
-  check('border toggle removes visible boundary pixels without hiding other layers',boundaryPixels!==withoutBoundaryPixels && await evaluate('!__cz6a.state.show.borders && __cz6a.state.show.grid && __cz6a.state.show.zones && __cz6a.groups.trajGroup.visible'));
+  await evaluate('document.getElementById("o-borders").click()');await wait('!__cz6a.boundaries.group.visible');
+  const withoutBoundaryPixels=await mapShot();
+  check('border toggle removes visible boundary vectors without hiding other layers',!boundaryPixels.equals(withoutBoundaryPixels) && await evaluate('!__cz6a.state.show.borders && __cz6a.state.show.grid && __cz6a.state.show.zones && __cz6a.groups.trajGroup.visible'));
   await shot('boundaries-off.png');
-  await evaluate('document.getElementById("o-borders").click()');
-  const restoredBoundaryPixels=await evaluate('__cz6a.mapOverlay.getContext("2d").getImageData(2900,390,690,480).data.reduce((s,v)=>s+v,0)');
-  check('border toggle restores the boundary overlay',restoredBoundaryPixels>withoutBoundaryPixels*1.5 && await evaluate('__cz6a.state.show.borders'));
+  await evaluate('document.getElementById("o-borders").click()');await wait('__cz6a.boundaries.group.visible');
+  const restoredBoundaryPixels=await mapShot();
+  check('border toggle restores rendered boundary vectors',!restoredBoundaryPixels.equals(withoutBoundaryPixels) && await evaluate('__cz6a.state.show.borders'));
+  await evaluate('__cz6a.flyTo(94.5,28.5,1.22)');await delay(1500);
+  await wait('__cz6a.mapLOD.stats().level===3 && __cz6a.mapLOD.stats().active===0 && __cz6a.mapLOD.stats().visible>0 && __cz6a.boundaries.stats().level==="fine"');
+  check('close zoom reaches native image detail and fine vector geometry',await evaluate('__cz6a.mapLOD.stats().worldWidth===21600 && __cz6a.mapLOD.stats().worldWidth<=__cz6a.mapLOD.stats().nativeLimit && __cz6a.boundaries.stats().segments>200000'));
+  await shot('southern-tibet-closeup.png');
+  await call('Input.dispatchMouseEvent',{type:'mouseWheel',x:780,y:490,deltaY:1600,deltaX:0});await delay(1200);
+  check('wheel zoom updates the camera and adaptive detail automatically',await evaluate('__cz6a.camera.position.length()>1.22 && __cz6a.mapLOD.stats().worldWidth<21600'));
+  for(const [lon,lat]of [[179,20],[-179,-25],[0,82],[99,34]]){await evaluate(`__cz6a.flyTo(${lon},${lat},1.22)`);await delay(1350);}
+  await wait('__cz6a.mapLOD.stats().active===0');
+  check('rotation and polar/dateline views stay within cache and concurrency budgets',await evaluate('__cz6a.mapLOD.stats().resident<=32 && __cz6a.mapLOD.stats().peak<=32 && __cz6a.mapLOD.stats().active<=4 && __cz6a.mapLOD.stats().failures===0'));
+  await evaluate('__cz6a.flyTo(99,34,2.15)');await delay(1400);
 
   await evaluate('document.getElementById("o-jelly").click()');await delay(200);
   check('jelly toggle does not hide ascent or 15-degree circle',await evaluate('!__cz6a.groups.jellyGroup.visible && __cz6a.groups.trajGroup.visible && __cz6a.groups.trajGroup.children.length>=2 && __cz6a.footprint().visible'));
@@ -67,6 +81,9 @@ try{
   check('full 1.5-revolution endpoint renders',await evaluate('document.getElementById("status").textContent.includes("1.50 / 1.5")'));
   await evaluate('document.querySelector("[data-view=\\"0\\"]").click()');await delay(1400);await shot('global-orbit.png');
   check('global camera preset',await evaluate('Math.abs(__cz6a.camera.position.length()-3.6)<.01'));
+  await evaluate('__cz6a.camera.position.setLength(4)');
+  await wait('__cz6a.mapLOD.stats().level===-1 && __cz6a.boundaries.stats().level==="coarse"');
+  check('zoom-out releases detail display and restores the coarse boundary level',await evaluate('__cz6a.mapLOD.stats().visible===0 && __cz6a.boundaries.stats().level==="coarse"'));
   await evaluate('document.querySelector("[data-view=\\"2\\"]").click()');await delay(1400);
   check('visibility checkbox and height slider removed',await evaluate('!document.getElementById("o-vis") && !document.getElementById("exag")'));
   check('configuration and launch-time explanations removed',await evaluate('!document.getElementById("family-note") && !document.getElementById("ctl").textContent.includes("Scenario time range")'));
@@ -98,11 +115,22 @@ try{
   await call('Emulation.setDeviceMetricsOverride',{width:320,height:740,deviceScaleFactor:1,mobile:true});await delay(200);
   check('320px viewport has no horizontal page overflow',await evaluate('document.documentElement.scrollWidth<=innerWidth'));
   check('boundary data loads from the site itself',requests.some((url)=>url.startsWith(new URL(base).origin)&&url.endsWith('/data/boundaries.json')));
+  check('no unconditional global 8K texture is requested',!requests.some((url)=>url.includes('earth_day_8k.jpg')));
+  check('image tiles and boundary detail are hosted locally',requests.some((url)=>url.includes('/tex/tiles/3/')) && requests.some((url)=>url.endsWith('/data/boundaries-fine.json')));
   check('no visibility analysis or worker is loaded',!requests.some((url)=>/\/visibility(?:-worker)?\.js(?:[?#]|$)/.test(url)));
   check('no JavaScript or failed-resource errors',errors.length===0);
   const storageBlock=await call('Page.addScriptToEvaluateOnNewDocument',{source:'Object.defineProperty(window,"localStorage",{get(){throw new Error("Storage disabled by test");}})'});
   await navigate(base);check('blocked browser storage is tolerated',await evaluate('!!__cz6a && !document.getElementById("loading")'));
   await call('Page.removeScriptToEvaluateOnNewDocument',{identifier:storageBlock.identifier});
-  const report={checks_passed:checks.length,checks,errors};await fs.writeFile(new URL('browser-validation.json',output),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
+  blockingTiles=true;await call('Network.setBlockedURLs',{urls:[new URL('tex/tiles/',base).href+'*']});
+  await navigate(base+'?cam=99,34,1.22');
+  await wait('__cz6a.mapLOD.stats().failures>0 && __cz6a.mapLOD.stats().active===0');
+  check('missing image tiles preserve the loaded base globe and vector boundaries',await evaluate('__cz6a.mapLOD.stats().visible===0 && __cz6a.boundaries.group.visible && !!document.querySelector("#view canvas") && !document.getElementById("loading")'));
+  await shot('missing-tiles-fallback.png');
+  await call('Network.setBlockedURLs',{urls:[]});blockingTiles=false;await navigate(base+'?cam=99,34,1.22');
+  await wait('__cz6a.mapLOD.stats().visible>0 && __cz6a.mapLOD.stats().active===0');
+  check('normal detail returns after tile availability is restored',await evaluate('__cz6a.mapLOD.stats().failures===0 && __cz6a.mapLOD.stats().visible>0'));
+  check('no unexpected errors after the fallback check',errors.length===0);
+  const report={checks_passed:checks.length,checks,errors,expected_tile_failures:expectedTileFailures.length};await fs.writeFile(new URL('browser-validation.json',output),JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));
 }catch(error){console.error(JSON.stringify({browser_errors:errors},null,2));throw error;
 }finally{ws?.close();chrome.kill('SIGTERM');if(chrome.exitCode===null)await new Promise((r)=>chrome.once('exit',r));await fs.rm(profile,{recursive:true,force:true});}

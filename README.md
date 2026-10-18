@@ -21,7 +21,7 @@ Use an HTTP server, not a `file://` URL: the viewer loads ES modules, JSON and l
 - Drag the globe to rotate and scroll to zoom. Camera presets and vehicle-follow mode are available. Hover the trajectory for MET/altitude; click to seek.
 - Click city labels or open **Observer sky chart** and enter coordinates. It shows ascent and orbital passes, Sun/Moon, stars, and optional constellation/Milky Way layers.
 - Toggle the sunlit-plume illustration, NOTAM polygons, ground tracks, city lights and solar contours. Turning off the plume does not hide the ascent.
-- **Borders & regions** is enabled by default: country borders and first-level state/province/region lines, including China's provinces. Country borders are stronger than regional lines; source-classified disputed/control lines are dashed. The checkbox or `?borders=0` hides both administrative levels. These are generalized cartographic reference lines, not authoritative sovereignty boundaries.
+- **Borders & regions** is enabled by default: country borders and first-level state/province/region lines, including China's provinces. Country borders are stronger than regional lines; remaining source-classified disputed/control lines are dashed. The selected land-boundary worldview is **China claims**, including the sourced southern Tibet claim; the footer identifies that view. The checkbox or `?borders=0` hides both administrative levels. These are generalized cartographic reference lines, not authoritative sovereignty boundaries.
 - The **green 15° circle** is enabled by default and follows the vehicle's current position and altitude. Its checkbox or `?fp=0` can turn it off. The ascent visibility envelope and Twilight jellyfish information panel are no longer displayed or computed by the viewer.
 - **Copy link** restores profile, mission, T0, numeric MET (including negative times), camera, speed, layer toggles and an open observer site. Height is fixed at true scale (×1). Panel visibility is a per-browser convenience; blocked storage is tolerated.
 - Live clock operates only within the modeled time span; it does not extrapolate a flight outside the data.
@@ -31,6 +31,22 @@ Example:
 ```text
 ?profile=retrograde-142&mission=yaogan50-03&t0=10:15:00&met=300&sky=30.66,104.07
 ```
+
+## Adaptive map detail
+
+Map imagery now refines automatically with zoom, viewport size and display pixel density. The permanent 4096 × 2048 globe is the fallback; only visible higher-detail tiles are requested. The local pyramid provides equivalent world widths of 5400, 10800 and **21600 pixels**, capped at the native **21600 × 10800** NASA Blue Marble source. Zooming closer cannot reveal detail absent from that source.
+
+- Tile selection uses projected pixels per radian, camera frustum and Earth-horizon culling. Twelve-percent hysteresis avoids switching repeatedly at a zoom threshold; selection updates at most every 160 ms. Four image requests may be in flight.
+- A strict **32-entry LRU**, including in-flight entries, bounds tile residency (about **75 MiB** worst-case RGBA+mipmap tile allocation, additional to the base globe, overlay and vector data). If a view would exceed that count, the imagery level is reduced. Failed tiles are retried after a 30-second cooldown. Missing detail leaves the base map visible; no blank holes or external tile/API service is needed.
+- Adjacent tiles include a wrapped/clamped one-pixel gutter. Tile shaders share the same illumination, city lights and geographic overlays as the base globe. The old unconditional global 8K download is no longer used.
+- Administrative boundaries are **screen-space vector lines**, not pixels enlarged from a fixed 4K overlay. Coarse, medium and fine geometries load with zoom, at 0.10°, 0.02° and 0.0025° simplification tolerances. These are generalized **Natural Earth 1:10 million** sources, not survey boundaries. At most two parsed levels are retained, and only one vector geometry level is rendered.
+- Day imagery refines; the existing global night-light texture and graticule/NOTAM fill overlay remain at their existing resolution. Trajectory, sunlight calculations and mission data are unchanged.
+
+### China-claims land-boundary view
+
+All three detail levels use the same pinned Natural Earth `FCLASS_CN` worldview and auxiliary claim-line geometry. For southern Tibet / Arunachal Pradesh, the sourced **Chinese claim** line (`ne_id=1746705431`) supplies the southern outline; the previous McMahon/de facto line (`1746705337`, source-classified unrecognized in this view) is omitted, not turned into a province border. Conflicting regional linework inside sourced China-assigned claim polygons is removed without inventing replacement province lines.
+
+Arunachal Pradesh is administered by India and claimed by China. This is an explicitly selected cartographic viewpoint, not a statement that the dispute is resolved. It is generalized land linework, **not a complete official Chinese standard map**: maritime claims and island/coastal sovereignty outlines are not added. The data and [boundary attribution](docs/data/BOUNDARIES-LICENSE.txt) retain source IDs, hashes, classification decisions and limitations.
 
 ## Current configuration
 
@@ -68,7 +84,9 @@ The exporter resamples the existing solution; it does not fit or integrate a new
 - `docs/index.html`: static page and styling.
 - `docs/js/app.js`: scene and controls; `profile.js`: validation, tracks and geometric sunlight; `astro.js`, `skychart.js`: astronomy and observer charts. `visibility*.js` are retained source-model analysis helpers, not loaded by the viewer.
 - `docs/data/profiles.json`: profile/mission manifest, with explicit defaults.
-- `docs/data/boundaries.json`: compact global Natural Earth country and first-level regional lines, drawn into the Earth texture below the trajectory and markers. `docs/js/boundaries.js` handles wrapping, validation and neutral line styling.
+- `docs/data/boundaries{,-medium,-fine}.json`: three consistent global country/regional line-detail levels. `boundaries.js` validates and tessellates independent lines; `boundary-layer.js` renders screen-space vectors with zoom-dependent detail.
+- `docs/js/map-lod.js`, `map-tiles.js`: screen-space tile selection, native-detail cap, bounded request/cache management and patch rendering. `docs/tex/tiles/manifest.json` records every tile hash and the source image hash; image attribution is in `docs/tex/TILES-LICENSE.txt`.
+- `tools/export_map_tiles.py`: reproducible local JPEG pyramid generation from the shared 21600 × 10800 Blue Marble source.
 - `tools/export_boundaries.py`: pinned, reproducible boundary-data simplification; see `docs/data/BOUNDARIES-LICENSE.txt` for source URLs, licenses and rebuild commands.
 - `docs/data/yaogan50-03.json`: self-contained first mission, including tracks, solar vectors, zones, events and synthetic TLE.
 - `profiles/retrograde-142/yaogan50-03/`: archived trajectory CSV, synthetic TLE, supplied KML and sanitized source metadata. No raw Space-Track records are included.
@@ -84,11 +102,21 @@ Rebuild the first mission (NumPy, SciPy, pyproj and Skyfield required):
 
 The shared kernel is read from `~/JPLDE/de440s.bsp`; it is never copied or downloaded into this repository. The browser does not need the kernel or Python. Source hashes, interpolation details, dependencies and nine export checks are recorded in `tests/profile_validation.json`.
 
+Rebuild/check imagery (Pillow required; the shared source image is read, not copied):
+
+```sh
+~/.venvs/astro313/bin/python -I tools/export_map_tiles.py
+~/.venvs/astro313/bin/python -I tools/export_map_tiles.py --check
+```
+
+Boundary rebuild commands and all four pinned source URLs/hashes are in `docs/data/BOUNDARIES-LICENSE.txt`; use `--all-levels` to reproduce the three China-view exports together. Optional source-level geometry/rebuild tests use the `CZ6A_BOUNDARY_SOURCES` paths described in `tests/test_boundary_exporter.py`.
+
 Tests, using Node 22+ and the astronomy environment:
 
 ```sh
 npm test
 ~/.venvs/astro313/bin/python -I tests/test_exporter.py
+~/.venvs/astro313/bin/python -I tests/test_boundary_exporter.py
 # With the local HTTP server running and Chrome installed:
 node tests/browser.mjs
 ```

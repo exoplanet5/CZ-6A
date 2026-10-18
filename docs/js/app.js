@@ -7,7 +7,9 @@ import {CSS2DRenderer, CSS2DObject} from 'three/addons/renderers/CSS2DRenderer.j
 import * as A from './astro.js';
 import {fetchJSON, validateManifest, validateMission, selectProfile, createFlight, solarEphemeris, sunlightClearance, computeJelly, clockSeconds, clamp, escapeHTML as esc} from './profile.js';
 import {createSkyChart} from './skychart.js';
-import {validateBoundaries, drawBoundaries} from './boundaries.js';
+import {validateBoundaries} from './boundaries.js';
+import {createMapTiles} from './map-tiles.js';
+import {createBoundaryLayer} from './boundary-layer.js';
 
 const $ = (id) => document.getElementById(id);
 const C = {sun:'#ffd54f',accent:'#4fc3f7',ink:'#e8eaed',dim:'#9aa4ae',ascent:'#d95926',orbit:'#3987e5',footprint:'#199e70'};
@@ -92,14 +94,15 @@ async function start() {
     if(state.show.grid){ovCtx.lineWidth=1;ovCtx.strokeStyle='rgba(255,255,255,.13)';
       for(let lon=-180;lon<=180;lon+=10){ovCtx.beginPath();ovCtx.moveTo(X(lon),0);ovCtx.lineTo(X(lon),H);ovCtx.stroke();}
       for(let lat=-80;lat<=80;lat+=10){ovCtx.beginPath();ovCtx.moveTo(0,Y(lat));ovCtx.lineTo(W,Y(lat));ovCtx.stroke();}}
-    if(state.show.borders)drawBoundaries(ovCtx,boundaryData,W,H);
     if(state.show.zones)for(const z of data.zones){const ring=[];for(const [lon,lat]of z.ring){const prev=ring.at(-1)?.[0]??lon;ring.push([prev+((lon-prev+540)%360)-180,lat]);}for(const shift of [-360,0,360]){ovCtx.beginPath();ring.forEach(([lon,lat],i)=>(i?ovCtx.lineTo:ovCtx.moveTo).call(ovCtx,X(lon+shift),Y(lat)));ovCtx.closePath();ovCtx.fillStyle='rgba(232,234,237,.18)';ovCtx.fill();}}
     ovTex.needsUpdate=true;
   }
-  const earthMat=new THREE.ShaderMaterial({uniforms:{dayTex:{value:dayTex},nightTex:{value:nightTex},ovTex:{value:ovTex},sunDir:{value:new THREE.Vector3(1,0,0)},lights:{value:1}},
+  const earthMat=new THREE.ShaderMaterial({uniforms:{dayTex:{value:dayTex},nightTex:{value:nightTex},ovTex:{value:ovTex},sunDir:{value:new THREE.Vector3(1,0,0)},lights:{value:1},tileRect:{value:new THREE.Vector4(0,0,1,1)},imageRect:{value:new THREE.Vector4(0,0,1,1)}},
     vertexShader:`varying vec2 vUv;varying vec3 vP;void main(){vUv=uv;vP=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
-    fragmentShader:`uniform sampler2D dayTex,nightTex,ovTex;uniform vec3 sunDir;uniform float lights;varying vec2 vUv;varying vec3 vP;void main(){float mu=dot(normalize(vP),sunDir);vec3 col=texture2D(dayTex,vUv).rgb*mix(.20,1.,smoothstep(-.2079,.03,mu));vec3 nl=texture2D(nightTex,vUv).rgb;col+=nl*nl*vec3(1.,.86,.62)*1.25*(1.-smoothstep(-.2079,-.0523,mu))*lights;vec4 ov=texture2D(ovTex,vUv);gl_FragColor=vec4(mix(col,ov.rgb,ov.a),1.);}`});
+    fragmentShader:`uniform sampler2D dayTex,nightTex,ovTex;uniform vec3 sunDir;uniform float lights;uniform vec4 tileRect,imageRect;varying vec2 vUv;varying vec3 vP;void main(){vec2 globalUV=tileRect.xy+vUv*tileRect.zw;vec2 imageUV=imageRect.xy+vUv*imageRect.zw;float mu=dot(normalize(vP),sunDir);vec3 col=texture2D(dayTex,imageUV).rgb*mix(.20,1.,smoothstep(-.2079,.03,mu));vec3 nl=texture2D(nightTex,globalUV).rgb;col+=nl*nl*vec3(1.,.86,.62)*1.25*(1.-smoothstep(-.2079,-.0523,mu))*lights;vec4 ov=texture2D(ovTex,globalUV);gl_FragColor=vec4(mix(col,ov.rgb,ov.a),1.);}`});
   scene.add(new THREE.Mesh(new THREE.SphereGeometry(1,256,128),earthMat));
+  const mapTiles=createMapTiles({scene,camera,renderer,earthMaterial:earthMat,loadTexture:loadTex});
+  const boundaryLayer=createBoundaryLayer({scene,camera,initialData:boundaryData});
   const termGroup=group();termGroup.add(line(circle(90),{color:C.sun,width:1.8}),line(circle(102),{color:C.accent,width:1.5}));
   const zoneGroup=group(),zoneLabels=group(),trajGroup=group(),gtGroup=group(),eventGroup=group(),jellyGroup=group(),cityGroup=group();
   const PAD=A.llToVec(...M.pad),pad=sprite(squareTex,.021);pad.position.set(...PAD.map((v)=>v*1.002));scene.add(pad);
@@ -215,6 +218,8 @@ async function start() {
     if(fly){const k=clamp((now-fly.start)/1200,0,1),t=k*k*(3-2*k),d=THREE.MathUtils.lerp(fly.from.length(),fly.to.length(),t);camera.position.copy(fly.from.clone().normalize().lerp(fly.to.clone().normalize(),t).normalize().multiplyScalar(d));if(k===1)fly=null;}
     else if(state.follow){const d=camera.position.length();camera.position.normalize().lerp(new THREE.Vector3(...s.u),1-Math.exp(-dt*2.5)).normalize().multiplyScalar(d);}
     controls.rotateSpeed=Math.min(1,.12+.3*(camera.position.length()-1));controls.update();
+    mapTiles.update(now,view.clientWidth,view.clientHeight);
+    boundaryLayer.update(now,view.clientWidth,view.clientHeight,renderer.getPixelRatio(),state.show.borders);
     for(const g of [zoneLabels,eventGroup])for(const o of g.children)if(o.isCSS2DObject)o.visible=state.show.labels&&visible(o.position);
     pickup.visible=!!J.pickup&&state.show.jelly;pickupLabel.visible=pickup.visible&&state.show.labels&&visible(pickup.position);shipLabel.visible=state.show.labels&&visible(ship.position);
     for(const o of cityGroup.children)o.visible=visible(o.position)&&camera.position.length()<(o.userData.tier===1?2.9:1.75)&&(!o.isCSS2DObject||state.show.labels);
@@ -228,6 +233,5 @@ async function start() {
   requestAnimationFrame((t)=>{frame(t);$('loading').remove();});
   const want=qs.get('sky'),city=CITIES.find((c)=>c[0].toLowerCase()===want?.toLowerCase()),ll=(want||'').split(',').map(Number);
   if(city)openSky({name:city[0],lon:city[1],lat:city[2]});else if(ll.length===2&&ll.every(Number.isFinite)&&Math.abs(ll[0])<=90&&Math.abs(ll[1])<=180)openSky({lat:ll[0],lon:ll[1],custom:true});
-  window.__cz6a={state,setMet,setT0,setPlaying,flyTo,camera,shareURL,sky,shipAt,jelly:()=>J,footprint:()=>fp,boundaryCoverage:boundaryData.coverage,mapOverlay:ovCanvas,meta:M,groups:{trajGroup,jellyGroup,termGroup},profile:profile.id,mission:entry.id};
-  if(renderer.capabilities.maxTextureSize>=8192)loadTex('./tex/earth_day_8k.jpg').then((t)=>{earthMat.uniforms.dayTex.value=t;dayTex.dispose();}).catch(()=>{});
+  window.__cz6a={state,setMet,setT0,setPlaying,flyTo,camera,shareURL,sky,shipAt,jelly:()=>J,footprint:()=>fp,boundaryCoverage:boundaryData.coverage,mapOverlay:ovCanvas,mapLOD:mapTiles,boundaries:boundaryLayer,meta:M,groups:{trajGroup,jellyGroup,termGroup},profile:profile.id,mission:entry.id};
 }
