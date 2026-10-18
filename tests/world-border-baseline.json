@@ -1,0 +1,14 @@
+{
+  "boundaries.json": {
+    "countries": "f9377cf638f3641bb139e66da6bfc3d753a97a3034f9f909cfedbf67c33e3fe7",
+    "disputed": "3561262778b47643238b0afa4959a571492d2dfbfd140858dbc61f94ada8c971"
+  },
+  "boundaries-medium.json": {
+    "countries": "7717e66a59e6c63c8576bd5037dc70ed1a13bac4ff610b4d31f2d2a09ff962f1",
+    "disputed": "f0c04c4639a4770a98c2308f4da00aaec773d90482c9c556a33897fbed46d8d0"
+  },
+  "boundaries-fine.json": {
+    "countries": "023f79bd4eb15942b4ed5fdc4ee5b40be2556a0d6d82e2a3080dae6e2d96a09d",
+    "disputed": "914b28991b1c9c64d949efb71fb6761d49dd23f3e86b9c974b92188c71a877a6"
+  }
+}

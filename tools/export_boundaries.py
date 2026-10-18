@@ -4,6 +4,7 @@
 The original two-input invocation remains available as a neutral, 50m single
 export. China-claims exports require the 10m land, claim-line and disputed-area
 sources together; omitting claim geometry must never silently change worldview.
+Production exports retain worldwide country borders and China-only regional detail.
 """
 import argparse
 from collections import Counter
@@ -30,6 +31,7 @@ LEVELS = (
 )
 MAX_FINE_POINTS = 350000
 WORLDVIEW = "China claims"
+CHINA_REGION_CODES = {"CHN", "HKG", "MAC", "TWN"}
 INTERNATIONAL = "International boundary (verify)"
 REGION_CLASSES = {
     "Map unit boundary", "Admin-1 boundary", "Admin-1 region boundary",
@@ -43,7 +45,10 @@ POLICY = (
     "Apply the same rule to land, auxiliary claim lines and regional lines. "
     "Remove regional line portions inside/on disputed-area polygons assigned "
     "to CHN by ADM0_A3_CN but not by ADM0_A3 (excluding polygons explicitly "
-    "classified as Admin-1); do not draw polygon edges or invent provinces."
+    "classified as Admin-1); do not draw polygon edges or invent provinces. "
+    "Display regional lines only for China (source codes CHN/HKG/MAC/TWN "
+    "in the selected China-claims view), including China-internal map-unit "
+    "limits. Keep country and disputed/control lines worldwide unchanged."
 )
 NOTE = (
     "Natural Earth's sourced China-claims worldview, not an assertion that "
@@ -94,6 +99,18 @@ def classify(properties):
     return effective, target
 
 
+def region_owner(properties):
+    """Resolve regional display scope from source identifiers, never a bbox."""
+    administration = properties.get("ADM0_A3")
+    if administration is not None:
+        return administration if administration in CHINA_REGION_CODES else None
+    # Hong Kong/Macau land limits are regional in the selected China view.
+    sides = {properties.get("ADM0_A3_L"), properties.get("ADM0_A3_R")}
+    if sides - {None} and sides - {None} <= CHINA_REGION_CODES:
+        return "CHN" if "CHN" in sides else sorted(sides - {None})[0]
+    return None
+
+
 def rounded_line(part, tolerance):
     coords = list(part.coords)
     if any(abs(a[0] - b[0]) > 180 for a, b in zip(coords, coords[1:])):
@@ -135,6 +152,7 @@ def prepare_worldview(countries_path, regions_path, claims_path, areas_path):
         raise ValueError("Missing sourced Arunachal Pradesh claim polygon")
     mask = union_all(masks)
     prepared, audit, clipped, skipped = [], [], [], Counter()
+    filtered_regions = Counter()
     classifications = {key: Counter() for key in ["countries10m", "claims", "regions"]}
     for key in classifications:
         for feature in loaded[key]["features"]:
@@ -147,6 +165,12 @@ def prepare_worldview(countries_path, regions_path, claims_path, areas_path):
             if p.get("FCLASS_CN"):
                 audit.append(record)
             if target is None:
+                continue
+            owner = region_owner(p) if target == "regions" else None
+            if target == "regions" and owner is None:
+                sides = "/".join(filter(None, [p.get("ADM0_A3_L"), p.get("ADM0_A3_R")]))
+                foreign_owner = p.get("ADM0_A3") or sides or "unassigned"
+                filtered_regions[foreign_owner] += 1
                 continue
             if not feature.get("geometry"):
                 skipped[key] += 1
@@ -163,13 +187,14 @@ def prepare_worldview(countries_path, regions_path, claims_path, areas_path):
             if not parts:
                 skipped[key] += 1
             for part in parts:
-                prepared.append((target, part, p.get("ADM0_A3") if key == "regions" else None,
+                prepared.append((target, part, owner,
                                  key, p["ne_id"]))
     return prepared, sources, {
         "classification_counts": {key: dict(sorted(value.items())) for key, value in classifications.items()},
         "worldview_overrides": audit,
         "regional_claim_masks": mask_records,
         "clipped_region_features": clipped,
+        "filtered_foreign_region_features": dict(sorted(filtered_regions.items())),
         "skipped_empty_features": dict(sorted(skipped.items())),
     }
 
@@ -178,16 +203,19 @@ def export_level(prepared, sources, audit, tolerance, level):
     if tolerance < 0:
         raise ValueError("Simplification tolerance must be nonnegative")
     layers = {"countries": [], "disputed": [], "regions": []}
-    counts, claim_indices = Counter(), []
+    counts, claim_indices, region_owners = Counter(), [], []
     for target, part, administration, key, ne_id in prepared:
         line = rounded_line(part, tolerance)
         if line:
             if key == "claims" and ne_id == 1746705431:
                 claim_indices.append(len(layers[target]))
             layers[target].append(line)
-            if administration:
+            if target == "regions":
+                if administration not in CHINA_REGION_CODES:
+                    raise ValueError("Regional line outside China display scope")
                 counts[administration] += 1
-    if counts["CHN"] < 50 or len(counts) < 150 or not all(layers.values()) or not claim_indices:
+                region_owners.append(administration)
+    if counts["CHN"] < 50 or not set(counts) <= CHINA_REGION_CODES or not all(layers.values()) or not claim_indices:
         raise ValueError("Incomplete global, China regional or southern Tibet claim coverage")
     point_counts = {key: sum(map(len, lines)) for key, lines in layers.items()}
     if level == "fine" and sum(point_counts.values()) > MAX_FINE_POINTS:
@@ -198,14 +226,15 @@ def export_level(prepared, sources, audit, tolerance, level):
             "name": "Natural Earth", "revision": REVISION, "license": "Public domain",
             "license_url": "https://www.naturalearthdata.com/about/terms-of-use/",
             "worldview": WORLDVIEW, "boundary_note": NOTE,
+            "regional_scope": "China only", "regional_scope_codes": sorted(CHINA_REGION_CODES),
             "worldview_policy_url": "https://www.naturalearthdata.com/about/disputed-boundaries-policy/",
             "claim_geometry_url": "https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-admin-0-breakaway-disputed-areas/",
             "classification_policy": POLICY, "files": sources,
             "level": level, "simplification_degrees": tolerance, "coordinate_decimals": 4,
-            "processing": "Resolve China worldview, merge connected parts per feature and clip regional lines before simplification; all LODs use the same pinned 1:10m sources. Round to four decimals and discard collapsed lines. No generated polygon edges.",
+            "processing": "Resolve China worldview, restrict regional display to China, merge connected parts per feature and clip regional lines before simplification; all LODs use the same pinned 1:10m sources. Round to four decimals and discard collapsed lines. No generated polygon edges.",
         },
         "coverage": {
-            "region_line_counts": dict(sorted(counts.items())), **audit,
+            "region_line_counts": dict(sorted(counts.items())), "region_line_owners": region_owners, **audit,
             "southern_tibet": {"claim_ne_id": 1746705431, "claim_layer": "countries",
                                "claim_line_indices": claim_indices, "omitted_land_ne_id": 1746705337,
                                "claim_bbox": [92.03586, 26.852057, 97.036175, 28.262514]},

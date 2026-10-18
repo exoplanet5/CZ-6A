@@ -21,7 +21,7 @@ Use an HTTP server, not a `file://` URL: the viewer loads ES modules, JSON and l
 - Drag the globe to rotate and scroll to zoom. Camera presets and vehicle-follow mode are available. Hover the trajectory for MET/altitude; click to seek.
 - Click city labels or open **Observer sky chart** and enter coordinates. It shows ascent and orbital passes, Sun/Moon, stars, and optional constellation/Milky Way layers.
 - Toggle the sunlit-plume illustration, NOTAM polygons, ground tracks, city lights and solar contours. Turning off the plume does not hide the ascent.
-- **Borders & regions** is enabled by default: country borders and first-level state/province/region lines, including China's provinces. Country borders are stronger than regional lines; remaining source-classified disputed/control lines are dashed. The selected land-boundary worldview is **China claims**, including the sourced southern Tibet claim; the footer identifies that view. The checkbox or `?borders=0` hides both administrative levels. These are generalized cartographic reference lines, not authoritative sovereignty boundaries.
+- **Borders & regions** is enabled by default: country borders worldwide, with province/region lines **only in China**. Other countries have no internal state/province/region lines. Country borders are stronger than regional lines; remaining source-classified disputed/control lines are dashed. The selected land-boundary worldview is **China claims**, including the sourced southern Tibet claim; the footer identifies that view. The checkbox or `?borders=0` hides both administrative levels. These are generalized cartographic reference lines, not authoritative sovereignty boundaries.
 - The **green 15° circle** is enabled by default and follows the vehicle's current position and altitude. Its checkbox or `?fp=0` can turn it off. The ascent visibility envelope and Twilight jellyfish information panel are no longer displayed or computed by the viewer.
 - **Copy link** restores profile, mission, T0, numeric MET (including negative times), camera, speed, layer toggles and an open observer site. Height is fixed at true scale (×1). Panel visibility is a per-browser convenience; blocked storage is tolerated.
 - Live clock operates only within the modeled time span; it does not extrapolate a flight outside the data.
@@ -43,6 +43,8 @@ Map imagery now refines automatically with zoom, viewport size and display pixel
 - Day imagery refines; the existing global night-light texture and graticule/NOTAM fill overlay remain at their existing resolution. Trajectory, sunlight calculations and mission data are unchanged.
 
 ### China-claims land-boundary view
+
+Regional display is restricted by source administration identifiers to China in the selected viewpoint, including Hong Kong/Macau internal limits; source-classified unrecognized lines remain omitted. Country and disputed/control boundary geometry worldwide is unchanged by this display filter.
 
 All three detail levels use the same pinned Natural Earth `FCLASS_CN` worldview and auxiliary claim-line geometry. For southern Tibet / Arunachal Pradesh, the sourced **Chinese claim** line (`ne_id=1746705431`) supplies the southern outline; the previous McMahon/de facto line (`1746705337`, source-classified unrecognized in this view) is omitted, not turned into a province border. Conflicting regional linework inside sourced China-assigned claim polygons is removed without inventing replacement province lines.
 
@@ -84,7 +86,7 @@ The exporter resamples the existing solution; it does not fit or integrate a new
 - `docs/index.html`: static page and styling.
 - `docs/js/app.js`: scene and controls; `profile.js`: validation, tracks and geometric sunlight; `astro.js`, `skychart.js`: astronomy and observer charts. `visibility*.js` are retained source-model analysis helpers, not loaded by the viewer.
 - `docs/data/profiles.json`: profile/mission manifest, with explicit defaults.
-- `docs/data/boundaries{,-medium,-fine}.json`: three consistent global country/regional line-detail levels. `boundaries.js` validates and tessellates independent lines; `boundary-layer.js` renders screen-space vectors with zoom-dependent detail.
+- `docs/data/boundaries{,-medium,-fine}.json`: three consistent detail levels for worldwide country borders and China-only regional lines. `boundaries.js` validates and tessellates independent lines; `boundary-layer.js` renders screen-space vectors with zoom-dependent detail.
 - `docs/js/map-lod.js`, `map-tiles.js`: screen-space tile selection, native-detail cap, bounded request/cache management and patch rendering. `docs/tex/tiles/manifest.json` records every tile hash and the source image hash; image attribution is in `docs/tex/TILES-LICENSE.txt`.
 - `tools/export_map_tiles.py`: reproducible local JPEG pyramid generation from the shared 21600 × 10800 Blue Marble source.
 - `tools/export_boundaries.py`: pinned, reproducible boundary-data simplification; see `docs/data/BOUNDARIES-LICENSE.txt` for source URLs, licenses and rebuild commands.

@@ -69,7 +69,9 @@ test('boundary detail increases without changing worldview or semantic coverage'
     assert.equal(data.source.worldview,'China claims');
     const count=Object.values(data.layers).flat().reduce((n,line)=>n+line.length,0);
     assert.ok(count>before);before=count;assert.ok(count<=350000);
-    assert.equal(data.coverage.region_line_counts.CHN,75);
+    assert.equal(data.coverage.region_line_counts.CHN,77);
+    assert.equal(data.source.regional_scope,'China only');
+    assert.ok(data.coverage.region_line_owners.every((code)=>['CHN','HKG','MAC','TWN'].includes(code)));
     assert.deepEqual(data.coverage.line_counts,levels[0].coverage.line_counts);
   }
 });

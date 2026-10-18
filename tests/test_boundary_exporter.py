@@ -5,6 +5,7 @@ with countries, regions, claims, areas and optionally legacy_countries paths.
 Run with python -I so downloaded GeoJSON directories cannot shadow imports.
 """
 import importlib.util
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -33,6 +34,17 @@ class ClassificationTests(unittest.TestCase):
                       "Line of control (please verify)", "future unknown class"]:
             self.assertEqual(exporter.classify({"FEATURECLA": value})[1], "disputed")
         self.assertEqual(exporter.classify({})[1], "disputed")
+
+    def test_regional_owner_uses_source_codes_and_china_internal_limits(self):
+        for code in exporter.CHINA_REGION_CODES:
+            self.assertEqual(exporter.region_owner({"ADM0_A3": code}), code)
+        for code in ["USA", "IND", "MNG", "RUS", "JPN"]:
+            self.assertIsNone(exporter.region_owner({"ADM0_A3": code}))
+        self.assertEqual(exporter.region_owner({"ADM0_A3_L": "CHN", "ADM0_A3_R": "HKG"}), "CHN")
+        self.assertEqual(exporter.region_owner({"ADM0_A3_L": "MAC", "ADM0_A3_R": "CHN"}), "CHN")
+        self.assertIsNone(exporter.region_owner({"ADM0_A3_L": "RUS", "ADM0_A3_R": "UKR"}))
+        self.assertIsNone(exporter.region_owner({"ADM0_A3_L": "CHN", "ADM0_A3_R": "IND"}))
+        self.assertIsNone(exporter.region_owner({}))
 
     def test_wrap_and_degenerate_lines(self):
         with self.assertRaisesRegex(ValueError, "antimeridian"):
@@ -73,13 +85,18 @@ class CommittedBoundaryTests(unittest.TestCase):
         self.assertLess(totals[1] * 2, totals[2])
         self.assertLessEqual(totals[2], exporter.MAX_FINE_POINTS)
 
-    def test_global_coverage_and_geographic_validity(self):
+    def test_worldwide_country_borders_china_only_regions_and_validity(self):
         for data in DATA:
             coverage = data["coverage"]
             self.assertGreaterEqual(coverage["region_line_counts"]["CHN"], 50)
-            self.assertGreater(len(coverage["region_line_counts"]), 150)
-            for code in ["CHN", "IND", "USA", "RUS", "CAN", "VNM", "JPN", "NPL"]:
-                self.assertGreater(coverage["region_line_counts"][code], 0)
+            self.assertEqual(data["source"]["regional_scope"], "China only")
+            self.assertLessEqual(set(coverage["region_line_counts"]), exporter.CHINA_REGION_CODES)
+            self.assertEqual(len(coverage["region_line_owners"]), len(data["layers"]["regions"]))
+            self.assertLessEqual(set(coverage["region_line_owners"]), exporter.CHINA_REGION_CODES)
+            self.assertEqual(sum(coverage["region_line_counts"].values()), len(data["layers"]["regions"]))
+            for code in ["IND", "USA", "RUS", "CAN", "VNM", "JPN", "NPL"]:
+                self.assertNotIn(code, coverage["region_line_counts"])
+                self.assertGreater(coverage["filtered_foreign_region_features"][code], 0)
             for key, lines in data["layers"].items():
                 self.assertEqual(len(lines), coverage["line_counts"][key])
                 self.assertEqual(sum(map(len, lines)), coverage["point_counts"][key])
@@ -92,6 +109,14 @@ class CommittedBoundaryTests(unittest.TestCase):
             shanxi = box(105, 30, 115, 42)
             self.assertGreater(sum(shanxi.contains(LineString(line))
                                    for line in data["layers"]["regions"]), 5)
+
+    def test_world_country_and_disputed_lines_are_identical_to_prior_release(self):
+        # Only regional display changes from bd397ee; world borders must not.
+        baseline = json.loads((ROOT / "tests/world-border-baseline.json").read_text())
+        for data, (_, filename, _) in zip(DATA, exporter.LEVELS):
+            for key in ["countries", "disputed"]:
+                digest = hashlib.sha256(json.dumps(data["layers"][key], separators=(",", ":")).encode()).hexdigest()
+                self.assertEqual(digest, baseline[filename][key])
 
     def test_southern_tibet_claim_present_not_just_mcmahon_hidden(self):
         # Exact endpoints from pinned B00 Chinese-claim feature 1746705431;
@@ -129,7 +154,8 @@ class CommittedBoundaryTests(unittest.TestCase):
         first = DATA[0]
         for data in DATA[1:]:
             for key in ["classification_counts", "worldview_overrides", "regional_claim_masks",
-                        "clipped_region_features", "region_line_counts", "line_counts"]:
+                        "clipped_region_features", "region_line_counts", "region_line_owners",
+                        "filtered_foreign_region_features", "line_counts"]:
                 self.assertEqual(data["coverage"][key], first["coverage"][key])
         self.assertGreater(first["coverage"]["classification_counts"]["countries10m"]
                            ["Disputed (please verify) -> disputed"], 0)
@@ -149,6 +175,18 @@ class SourceGeometryTests(unittest.TestCase):
             rebuilt = exporter.export_level(*self.prepared, tolerance, level)
             text = json.dumps(rebuilt, separators=(",", ":"), allow_nan=False) + "\n"
             self.assertEqual(text, (ROOT / "docs/data" / filename).read_text())
+
+    def test_foreign_regional_features_are_absent_from_prepared_geometry(self):
+        source, _ = exporter.read_source("regions", self.paths["regions"])
+        foreign = {f["properties"]["ne_id"] for f in source["features"]
+                   if f["properties"].get("ADM0_A3") not in exporter.CHINA_REGION_CODES
+                   and exporter.classify(f["properties"])[1] == "regions"}
+        included = {ne_id for target, _, owner, key, ne_id in self.prepared[0]
+                    if target == "regions" and key == "regions"}
+        self.assertGreater(len(foreign), 9000)
+        self.assertFalse(included & foreign)
+        self.assertTrue(all(owner in exporter.CHINA_REGION_CODES
+                            for target, _, owner, *_ in self.prepared[0] if target == "regions"))
 
     def test_claim_is_exactly_sourced_before_simplification(self):
         claims, _ = exporter.read_source("claims", self.paths["claims"])

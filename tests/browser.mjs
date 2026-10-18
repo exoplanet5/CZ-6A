@@ -42,8 +42,9 @@ try{
   check('two solid solar contours',await evaluate('__cz6a.groups.termGroup.children.every(x=>!x.material.dashed) && __cz6a.groups.termGroup.children[0].material.color.getHexString()==="ffd54f" && __cz6a.groups.termGroup.children[1].material.color.getHexString()==="4fc3f7"'));
   check('no Zhuque-specific user-facing text',await evaluate('!(/ZQ-2|TQ-12|SECO-1|circularisation|34′/.test(document.body.innerText))'));
   check('country and regional boundaries are enabled by default',await evaluate('__cz6a.state.show.borders && document.getElementById("o-borders").checked'));
-  check('worldwide regional data includes China provinces',await evaluate('__cz6a.boundaryCoverage.region_line_counts.CHN>=50 && Object.keys(__cz6a.boundaryCoverage.region_line_counts).length>150'));
+  check('regions are limited to China while worldwide country borders remain',await evaluate('__cz6a.boundaryCoverage.region_line_counts.CHN>=50 && __cz6a.boundaryCoverage.line_counts.countries===466 && __cz6a.boundaryCoverage.region_line_owners.length===110 && __cz6a.boundaryCoverage.region_line_owners.every(code=>["CHN","HKG","MAC","TWN"].includes(code)) && !__cz6a.boundaryCoverage.region_line_counts.USA && !__cz6a.boundaryCoverage.region_line_counts.IND'));
   await wait('__cz6a.mapLOD.stats().active===0 && __cz6a.mapLOD.stats().visible>0 && __cz6a.boundaries.stats().level==="medium"');
+  const mediumBoundarySegments=await evaluate('__cz6a.boundaries.stats().segments');
   check('regional view loads only visible higher-resolution image tiles',await evaluate('__cz6a.mapLOD.stats().worldWidth>4096 && __cz6a.mapLOD.stats().wanted<=32 && __cz6a.mapLOD.stats().visible>0'));
   check('borders are screen-space vectors in the China-claims view',await evaluate('__cz6a.boundaries.group.children[0].children.every(x=>x.isLineSegments2) && __cz6a.boundaries.stats().worldview==="China claims" && document.getElementById("credit").textContent.includes("China-claims")'));
   const mapShot=async()=>Buffer.from((await call('Page.captureScreenshot',{format:'png',clip:{x:420,y:160,width:600,height:600,scale:1}})).data,'base64');
@@ -58,11 +59,11 @@ try{
   check('border toggle restores rendered boundary vectors',!restoredBoundaryPixels.equals(withoutBoundaryPixels) && await evaluate('__cz6a.state.show.borders'));
   await evaluate('__cz6a.flyTo(94.5,28.5,1.22)');await delay(1500);
   await wait('__cz6a.mapLOD.stats().level===3 && __cz6a.mapLOD.stats().active===0 && __cz6a.mapLOD.stats().visible>0 && __cz6a.boundaries.stats().level==="fine"');
-  check('close zoom reaches native image detail and fine vector geometry',await evaluate('__cz6a.mapLOD.stats().worldWidth===21600 && __cz6a.mapLOD.stats().worldWidth<=__cz6a.mapLOD.stats().nativeLimit && __cz6a.boundaries.stats().segments>200000'));
+  check('close zoom reaches native image detail and fine vector geometry',await evaluate('__cz6a.mapLOD.stats().worldWidth===21600 && __cz6a.mapLOD.stats().worldWidth<=__cz6a.mapLOD.stats().nativeLimit') && await evaluate('__cz6a.boundaries.stats().segments')>mediumBoundarySegments);
   await shot('southern-tibet-closeup.png');
   await call('Input.dispatchMouseEvent',{type:'mouseWheel',x:780,y:490,deltaY:1600,deltaX:0});await delay(1200);
   check('wheel zoom updates the camera and adaptive detail automatically',await evaluate('__cz6a.camera.position.length()>1.22 && __cz6a.mapLOD.stats().worldWidth<21600'));
-  for(const [lon,lat]of [[179,20],[-179,-25],[0,82],[99,34]]){await evaluate(`__cz6a.flyTo(${lon},${lat},1.22)`);await delay(1350);}
+  for(const [lon,lat]of [[179,20],[-179,-25],[0,82],[-100,38],[80,24],[99,34]]){await evaluate(`__cz6a.flyTo(${lon},${lat},1.22)`);await delay(1350);if(lon===-100)await shot('usa-country-borders-only.png');if(lon===80)await shot('india-country-borders-only.png');}
   await wait('__cz6a.mapLOD.stats().active===0');
   check('rotation and polar/dateline views stay within cache and concurrency budgets',await evaluate('__cz6a.mapLOD.stats().resident<=32 && __cz6a.mapLOD.stats().peak<=32 && __cz6a.mapLOD.stats().active<=4 && __cz6a.mapLOD.stats().failures===0'));
   await evaluate('__cz6a.flyTo(99,34,2.15)');await delay(1400);

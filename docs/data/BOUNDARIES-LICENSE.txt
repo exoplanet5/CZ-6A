@@ -33,8 +33,19 @@ other class (including unknown classes) remains in disputed. This also uses
 Natural Earth's China-view classification for disputes elsewhere; it does not
 silently declare default disputed/indefinite/control lines accepted. Hong Kong
 and Macau land limits, classified as map-unit limits, are regional rather than
-international lines. Source-China-view administrative classifications outside
-China are likewise retained rather than independently reinterpreted.
+international lines. Source classifications are retained for interpretation,
+but regional display is limited to China; internal regions of other countries are not drawn.
+
+REGIONAL DISPLAY SCOPE
+All three exports show regional lines only for China in the selected viewpoint.
+Source identifiers CHN/HKG/MAC/TWN define eligibility; source Unrecognized*
+classifications still take precedence, so this does not force omitted lines
+back onto the map. China-Hong Kong and China-Macau map-unit limits remain as
+regional lines. Other countries' internal state/province/region lines are
+filtered, including lines that the selected worldview calls Admin-1 elsewhere.
+Metadata lists each emitted regional line's source owner and counts foreign
+regional features excluded from display. Worldwide country and disputed/control
+line geometry is byte-for-byte unchanged from release bd397ee.
 
 Regional lines marked Unrecognized* are omitted. Additionally, regional lines
 inside/on sourced disputed-area polygons assigned to CHN rather than their
@@ -80,12 +91,12 @@ Coordinates round to four decimals; collapsed lines are discarded. The exporter
 rejects unsplit antimeridian jumps and a fine level above 350,000 coordinates.
 
 File                        Tolerance  Coordinates (all three layers)
-boundaries.json             0.1000 deg   33,766
-boundaries-medium.json      0.0200 deg   83,682
-boundaries-fine.json        0.0025 deg  249,273
+boundaries.json             0.1000 deg    5,042
+boundaries-medium.json      0.0200 deg   16,372
+boundaries-fine.json        0.0025 deg   54,948
 
-Each level embeds source URLs/hashes, tolerance, point/line counts, global
-regional coverage and an audit of worldview classification decisions. There is
+Each level embeds source URLs/hashes, tolerance, point/line counts, China-only
+regional ownership and an audit of worldview classification decisions. There is
 no separate levels manifest: the filenames above are the stable renderer API.
 Independent line simplification is cartographic, not a survey/topology product.
 
