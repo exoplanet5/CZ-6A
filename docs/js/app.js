@@ -7,6 +7,7 @@ import {CSS2DRenderer, CSS2DObject} from 'three/addons/renderers/CSS2DRenderer.j
 import * as A from './astro.js';
 import {fetchJSON, validateManifest, validateMission, selectProfile, createFlight, solarEphemeris, sunlightClearance, computeJelly, clockSeconds, clamp, escapeHTML as esc} from './profile.js';
 import {createSkyChart} from './skychart.js';
+import {validateBoundaries, drawBoundaries} from './boundaries.js';
 
 const $ = (id) => document.getElementById(id);
 const C = {sun:'#ffd54f',accent:'#4fc3f7',ink:'#e8eaed',dim:'#9aa4ae',ascent:'#d95926',orbit:'#3987e5',footprint:'#199e70'};
@@ -32,7 +33,7 @@ async function start() {
   const requestedT0=clockSeconds(qs.get('t0'));
   const state = {date:M.date,t0:Number.isFinite(requestedT0)?clamp(requestedT0,t0Min,t0Max):clockSeconds(M.t0_default),
     met:num('met',300,metMin,MET_END),follow:qs.get('follow')==='1',playing:false,live:false,speed:num('speed',10,1,300),
-    show:Object.fromEntries(['term','zones','labels','gt','jelly','grid','lights','cities','fp'].map((k)=>[k,qs.get(k)!=='0']))};
+    show:Object.fromEntries(['term','zones','labels','gt','jelly','grid','lights','cities','fp','borders'].map((k)=>[k,qs.get(k)!=='0']))};
   const t0ms=()=>A.dateT0ms(M.date,state.t0), phaseOf=(met)=>(M.phases.find((p)=>met<p.until)||M.phases.at(-1)).label;
   function styleAt(met,T0) {
     const s=shipAt(met),lit=sunlightClearance(s.p,sunAt(T0+met*1000))>0,powered=poweredAt(met);
@@ -81,7 +82,8 @@ async function start() {
   const loader=new THREE.TextureLoader();
   const loadTex=(url)=>new Promise((resolve,reject)=>loader.load(url,(t)=>{t.colorSpace=THREE.NoColorSpace;t.anisotropy=renderer.capabilities.getMaxAnisotropy();resolve(t);},undefined,()=>reject(new Error(`Texture missing: ${url}`))));
   $('loadmsg').textContent='Loading Blue Marble…';
-  const [dayTex,nightTex]=await Promise.all([loadTex('./tex/earth_day_4k.jpg'),loadTex('./tex/earth_night.jpg')]);
+  const [dayTex,nightTex,boundaryRaw]=await Promise.all([loadTex('./tex/earth_day_4k.jpg'),loadTex('./tex/earth_night.jpg'),fetchJSON('./data/boundaries.json')]);
+  const boundaryData=validateBoundaries(boundaryRaw);
   const ovCanvas=document.createElement('canvas');ovCanvas.width=4096;ovCanvas.height=2048;
   const ovCtx=ovCanvas.getContext('2d'),ovTex=new THREE.CanvasTexture(ovCanvas);ovTex.colorSpace=THREE.NoColorSpace;
   function drawOverlay() {
@@ -90,6 +92,7 @@ async function start() {
     if(state.show.grid){ovCtx.lineWidth=1;ovCtx.strokeStyle='rgba(255,255,255,.13)';
       for(let lon=-180;lon<=180;lon+=10){ovCtx.beginPath();ovCtx.moveTo(X(lon),0);ovCtx.lineTo(X(lon),H);ovCtx.stroke();}
       for(let lat=-80;lat<=80;lat+=10){ovCtx.beginPath();ovCtx.moveTo(0,Y(lat));ovCtx.lineTo(W,Y(lat));ovCtx.stroke();}}
+    if(state.show.borders)drawBoundaries(ovCtx,boundaryData,W,H);
     if(state.show.zones)for(const z of data.zones){const ring=[];for(const [lon,lat]of z.ring){const prev=ring.at(-1)?.[0]??lon;ring.push([prev+((lon-prev+540)%360)-180,lat]);}for(const shift of [-360,0,360]){ovCtx.beginPath();ring.forEach(([lon,lat],i)=>(i?ovCtx.lineTo:ovCtx.moveTo).call(ovCtx,X(lon+shift),Y(lat)));ovCtx.closePath();ovCtx.fillStyle='rgba(232,234,237,.18)';ovCtx.fill();}}
     ovTex.needsUpdate=true;
   }
@@ -225,6 +228,6 @@ async function start() {
   requestAnimationFrame((t)=>{frame(t);$('loading').remove();});
   const want=qs.get('sky'),city=CITIES.find((c)=>c[0].toLowerCase()===want?.toLowerCase()),ll=(want||'').split(',').map(Number);
   if(city)openSky({name:city[0],lon:city[1],lat:city[2]});else if(ll.length===2&&ll.every(Number.isFinite)&&Math.abs(ll[0])<=90&&Math.abs(ll[1])<=180)openSky({lat:ll[0],lon:ll[1],custom:true});
-  window.__cz6a={state,setMet,setT0,setPlaying,flyTo,camera,shareURL,sky,shipAt,jelly:()=>J,footprint:()=>fp,meta:M,groups:{trajGroup,jellyGroup,termGroup},profile:profile.id,mission:entry.id};
+  window.__cz6a={state,setMet,setT0,setPlaying,flyTo,camera,shareURL,sky,shipAt,jelly:()=>J,footprint:()=>fp,boundaryCoverage:boundaryData.coverage,mapOverlay:ovCanvas,meta:M,groups:{trajGroup,jellyGroup,termGroup},profile:profile.id,mission:entry.id};
   if(renderer.capabilities.maxTextureSize>=8192)loadTex('./tex/earth_day_8k.jpg').then((t)=>{earthMat.uniforms.dayTex.value=t;dayTex.dispose();}).catch(()=>{});
 }

@@ -10,7 +10,7 @@ const output=new URL('../.test-artifacts/',import.meta.url);await fs.mkdir(outpu
 const profile=await fs.mkdtemp(path.join(os.tmpdir(),'cz6a-browser-'));
 const chrome=spawn(chromePath,['--headless=new','--remote-debugging-port=0',`--user-data-dir=${profile}`,'--no-first-run','--no-default-browser-check','about:blank'],{stdio:'ignore'});
 const delay=(ms)=>new Promise((r)=>setTimeout(r,ms));
-const errors=[],checks=[],requests=[];let ws;
+const errors=[],checks=[],requests=[],requestURLs=new Map();let ws;
 try{
   let port;
   for(let i=0;i<200;i++){try{port=+(await fs.readFile(path.join(profile,'DevToolsActivePort'),'utf8')).split('\n')[0];break;}catch{await delay(100);}}
@@ -19,7 +19,8 @@ try{
   ws=new WebSocket(targets.find((t)=>t.type==='page').webSocketDebuggerUrl);await new Promise((r,j)=>{ws.onopen=r;ws.onerror=j;});
   let id=0;const waiting=new Map();
   ws.onmessage=({data})=>{const m=JSON.parse(data);if(m.id){const p=waiting.get(m.id);if(p){waiting.delete(m.id);m.error?p.reject(new Error(m.error.message)):p.resolve(m.result);}}
-    if(m.method==='Network.requestWillBeSent')requests.push(m.params.request.url);
+    if(m.method==='Network.requestWillBeSent'){requests.push(m.params.request.url);requestURLs.set(m.params.requestId,m.params.request.url);}
+    if(m.method==='Network.loadingFailed')errors.push(`${m.params.errorText} ${requestURLs.get(m.params.requestId)||''}`);
     if(m.method==='Runtime.exceptionThrown')errors.push(m.params.exceptionDetails.exception?.description||m.params.exceptionDetails.text);
     if(m.method==='Runtime.consoleAPICalled'&&m.params.type==='error')errors.push(m.params.args.map((a)=>a.value||a.description).join(' '));
     if(m.method==='Network.responseReceived'&&m.params.response.status>=400)errors.push(`${m.params.response.status} ${m.params.response.url}`);
@@ -40,7 +41,18 @@ try{
   check('circle legend matches its green dashed style',await evaluate('(()=>{const s=getComputedStyle(document.querySelector("#legend>div:nth-child(2) span:first-child i"));return s.borderTopColor==="rgb(25, 158, 112)" && s.borderTopStyle==="dashed";})()'));
   check('two solid solar contours',await evaluate('__cz6a.groups.termGroup.children.every(x=>!x.material.dashed) && __cz6a.groups.termGroup.children[0].material.color.getHexString()==="ffd54f" && __cz6a.groups.termGroup.children[1].material.color.getHexString()==="4fc3f7"'));
   check('no Zhuque-specific user-facing text',await evaluate('!(/ZQ-2|TQ-12|SECO-1|circularisation|34′/.test(document.body.innerText))'));
+  check('country and regional boundaries are enabled by default',await evaluate('__cz6a.state.show.borders && document.getElementById("o-borders").checked'));
+  check('worldwide regional data includes China provinces',await evaluate('__cz6a.boundaryCoverage.region_line_counts.CHN>=50 && Object.keys(__cz6a.boundaryCoverage.region_line_counts).length>150'));
+  const boundaryPixels=await evaluate('__cz6a.mapOverlay.getContext("2d").getImageData(2900,390,690,480).data.reduce((s,v)=>s+v,0)');
   await shot('desktop.png');
+  await evaluate('document.getElementById("o-borders").click()');
+  const withoutBoundaryPixels=await evaluate('__cz6a.mapOverlay.getContext("2d").getImageData(2900,390,690,480).data.reduce((s,v)=>s+v,0)');
+  check('border toggle removes visible boundary pixels without hiding other layers',boundaryPixels!==withoutBoundaryPixels && await evaluate('!__cz6a.state.show.borders && __cz6a.state.show.grid && __cz6a.state.show.zones && __cz6a.groups.trajGroup.visible'));
+  await shot('boundaries-off.png');
+  await evaluate('document.getElementById("o-borders").click()');
+  const restoredBoundaryPixels=await evaluate('__cz6a.mapOverlay.getContext("2d").getImageData(2900,390,690,480).data.reduce((s,v)=>s+v,0)');
+  check('border toggle restores the boundary overlay',restoredBoundaryPixels>withoutBoundaryPixels*1.5 && await evaluate('__cz6a.state.show.borders'));
+
   await evaluate('document.getElementById("o-jelly").click()');await delay(200);
   check('jelly toggle does not hide ascent or 15-degree circle',await evaluate('!__cz6a.groups.jellyGroup.visible && __cz6a.groups.trajGroup.visible && __cz6a.groups.trajGroup.children.length>=2 && __cz6a.footprint().visible'));
   await evaluate('__cz6a.setT0(39600)');
@@ -64,13 +76,15 @@ try{
   await evaluate('document.getElementById("skybtn").click()');
   await wait('!!document.querySelector(".skw") && document.querySelector(".skw-title .sub").textContent.includes("Chengdu")');
   check('sky chart loads star data and pass geometry',await evaluate('document.querySelector(".skc-passes").textContent.length>0 && document.querySelector(".skc-hud").textContent.includes("AZ")'));
-  await shot('sky-chart.png');await evaluate('__cz6a.sky.close();__cz6a.setMet(-90);document.getElementById("o-grid").click()');
+  await shot('sky-chart.png');await evaluate('__cz6a.sky.close();__cz6a.setMet(-90);document.getElementById("o-grid").click();document.getElementById("o-borders").click()');
   const url=await evaluate('__cz6a.shareURL()');await navigate(url);
-  check('share link restores negative MET and toggles',await evaluate('__cz6a.state.met===-90 && !__cz6a.state.show.grid && __cz6a.state.show.fp'));
+  check('share link restores negative MET and toggles',await evaluate('__cz6a.state.met===-90 && !__cz6a.state.show.grid && __cz6a.state.show.fp && !__cz6a.state.show.borders && !document.getElementById("o-borders").checked'));
   await navigate(base+'?t0=bad&met=NaN&exag=NaN&cam=1,2,0');
   check('malformed URL input safely defaults or clamps',await evaluate('__cz6a.state.t0===36900 && __cz6a.state.met===300 && __cz6a.camera.position.length()>=1.049'));
   await navigate(base+'?vis=0&exag=5');
   check('obsolete layer and height URL controls are ignored',await evaluate('!__cz6a.groups.visGroup && !new URL(__cz6a.shareURL()).searchParams.has("vis") && !new URL(__cz6a.shareURL()).searchParams.has("exag")'));
+  await navigate(base+'?borders=0');
+  check('explicit borders-off link overrides the default',await evaluate('!__cz6a.state.show.borders && !document.getElementById("o-borders").checked'));
   await navigate(base+'?fp=0');
   check('explicit circle-off link overrides the default',await evaluate('!__cz6a.state.show.fp && !document.getElementById("o-fp").checked && (!__cz6a.footprint() || !__cz6a.footprint().visible)'));
   await navigate(base);
@@ -83,6 +97,7 @@ try{
   await shot('mobile-sky-chart.png');
   await call('Emulation.setDeviceMetricsOverride',{width:320,height:740,deviceScaleFactor:1,mobile:true});await delay(200);
   check('320px viewport has no horizontal page overflow',await evaluate('document.documentElement.scrollWidth<=innerWidth'));
+  check('boundary data loads from the site itself',requests.some((url)=>url.startsWith(new URL(base).origin)&&url.endsWith('/data/boundaries.json')));
   check('no visibility analysis or worker is loaded',!requests.some((url)=>/\/visibility(?:-worker)?\.js(?:[?#]|$)/.test(url)));
   check('no JavaScript or failed-resource errors',errors.length===0);
   const storageBlock=await call('Page.addScriptToEvaluateOnNewDocument',{source:'Object.defineProperty(window,"localStorage",{get(){throw new Error("Storage disabled by test");}})'});

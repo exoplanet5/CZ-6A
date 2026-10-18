@@ -1,0 +1,28 @@
+Administrative boundary data: Natural Earth (public domain).
+https://www.naturalearthdata.com/about/terms-of-use/
+
+Pinned source revision: ca96624a56bd078437bca8184e78163e5039ad19
+Country land borders (1:50m):
+https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_50m_admin_0_boundary_lines_land.geojson
+First-level states/provinces/regions worldwide (1:10m):
+https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_10m_admin_1_states_provinces_lines.geojson
+
+The exported layer merges connected pieces within each source feature,
+simplifies by 0.02 degrees, rounds coordinates to four decimals and removes
+empty/zero-length features. It includes China province boundaries and regional
+lines in the other administrations present in the source. Geographic detail is
+generalized; coastlines are supplied by the Blue Marble image, not this layer.
+Country borders are solid; source-classified disputed, indefinite, indeterminate
+and control lines are dashed. These are geographic reference lines, not an
+authoritative statement of sovereignty. No country-specific worldview override
+has been applied. Natural Earth publishes further detail about its conventions:
+https://www.naturalearthdata.com/about/disputed-boundaries-policy/
+
+Rebuild (Shapely required; no code from the downloaded sources is executed):
+1. Download each pinned GeoJSON into a separate new temporary directory.
+2. Run from the project with the two file paths:
+   ~/.venvs/astro313/bin/python -I tools/export_boundaries.py \
+       --countries /path/to/countries.geojson --regions /path/to/regions.geojson
+3. Add --check to verify that the committed data reproduces byte-for-byte.
+Source SHA-256 hashes are checked by the exporter and embedded in the JSON.
+The live browser reads only local boundaries.json, not any third-party map API.
