@@ -52,7 +52,7 @@ table{width:100%;border-collapse:collapse;font-size:11px;font-variant-numeric:ta
 <div id="clock"><span class="utcd"><span class="k">UTC</span> <span id="c-date">—</span></span><span class="utct"><span id="c-utc">—</span>Z</span><span id="c-met">T+00:05:00</span><span class="cst"><span class="k">CST</span> <span id="c-cst">—</span></span></div>
 <button class="btn tog" data-panel="info" aria-label="Toggle flight information" aria-controls="info">ⓘ</button>
 </header>
-<main id="view" aria-label="Interactive Earth and launch trajectory. Drag to rotate, scroll to zoom; hover or click the track to inspect time and altitude."></main>
+<main id="view" aria-label="Interactive Earth and launch trajectory. Drag to rotate, right-drag or two-finger drag to pan, scroll or pinch to zoom. Click the globe for its sky chart; hover or click the track to inspect time and altitude."></main>
 <div id="leftcol">
 <aside id="ctl" class="panel" aria-label="Launch controls">
 <h2>Launch configuration</h2>
@@ -76,7 +76,7 @@ table{width:100%;border-collapse:collapse;font-size:11px;font-variant-numeric:ta
 <label class="chk"><input id="o-grid" type="checkbox">Graticule</label><label class="chk"><input id="o-cities" type="checkbox">Cities</label>
 <label class="chk"><input id="o-lights" type="checkbox">City lights</label>
 <label class="chk" title="Country borders worldwide; province and region boundaries only in China · China-claims map view"><input id="o-borders" type="checkbox" checked>Borders & regions</label>
-</div><p class="note">Drag to orbit · scroll to zoom · click a city for its sky chart. Hover the trajectory for time and altitude; click to seek.</p>
+</div><p class="note">Drag to orbit · right-drag or two fingers to pan · scroll or pinch to zoom. Click anywhere on the globe for its sky chart; click the trajectory to seek. Camera presets recenter.</p>
 </aside>
 <div id="legend" aria-label="Trajectory and solar-line legend"></div>
 </div>
@@ -90,7 +90,7 @@ table{width:100%;border-collapse:collapse;font-size:11px;font-variant-numeric:ta
 <h2>Model & sources</h2><div class="note" id="about"></div>
 </aside>
 <div id="inspect" hidden></div><div id="notice" role="status" aria-live="polite"></div>
-<footer id="credit">Illustration: Mickey · base map NASA Blue Marble · China-claims boundaries</footer>
+<footer id="credit">Illustration: Mickey · base map NASA Blue Marble</footer>
 <div id="loading"><div>Loading <b>CZ-6A</b> launch profiles…</div><div id="loadmsg"></div></div>
 <script type="module">
 import('./js/app.js').catch((error)=>{

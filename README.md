@@ -18,13 +18,13 @@ Use an HTTP server, not a `file://` URL: the viewer loads ES modules, JSON and l
 - Select a **profile**, then a **mission configuration**. Defaults are explicit; adding a profile never silently changes the landing mission.
 - Change **T0** to recompute Sun geometry, sunlight pickup and the synthetic TLE orientation. The supplied Earth-fixed track stays unchanged.
 - Scrub MET, play at 1–300×, or click a timeline time. Space toggles playback; arrows seek 10 s, or 300 s with Shift, when a form control is not focused.
-- Drag the globe to rotate and scroll to zoom. Camera presets and vehicle-follow mode are available. Hover the trajectory for MET/altitude; click to seek.
+- Drag the globe to rotate, **right-drag** (or two-finger drag on a touch screen) to pan, and scroll or pinch to zoom. Panning keeps the orbit centre inside the globe and the camera above the surface; camera presets and vehicle-follow mode recenter the view. Hover the trajectory for MET/altitude; click to seek.
 - The city layer includes **110 China city centres**: all mainland provincial capitals, major regional/coastal cities and additional launch-corridor cities. Three zoom tiers reveal more cities as you move closer, with small neutral dots and collision-checked labels. City coordinates are approximate map/observer defaults; use a specific site coordinate for precise local viewing.
-- Click city labels or open **Observer sky chart** and enter coordinates. It shows ascent and orbital passes, Sun/Moon, stars, and optional constellation/Milky Way layers.
+- **Click anywhere on the globe** (or tap on a phone), click a city label, or open **Observer sky chart** and enter coordinates. A cyan ring marks the selected observer site while the chart is open. Clicks on the trajectory seek instead, and drags, pans and pinches never open a chart. It shows ascent and orbital passes, Sun/Moon, stars, and optional constellation/Milky Way layers.
 - Toggle the sunlit-plume illustration, NOTAM polygons, ground tracks, city lights and solar contours. Turning off the plume does not hide the ascent.
 - **Borders & regions** is enabled by default: country borders worldwide, with province/region lines **only in China**. Other countries have no internal state/province/region lines. Country borders are stronger than regional lines; remaining source-classified disputed/control lines are dashed. The selected land-boundary worldview is **China claims**, including the sourced southern Tibet claim; the footer identifies that view. The checkbox or `?borders=0` hides both administrative levels. These are generalized cartographic reference lines, not authoritative sovereignty boundaries.
 - The **green 15° circle** is enabled by default and follows the vehicle's current position and altitude. Its checkbox or `?fp=0` can turn it off. The ascent visibility envelope and Twilight jellyfish information panel are no longer displayed or computed by the viewer.
-- **Copy link** restores profile, mission, T0, numeric MET (including negative times), camera, speed, layer toggles and an open observer site. Height is fixed at true scale (×1). Panel visibility is a per-browser convenience; blocked storage is tolerated.
+- **Copy link** restores profile, mission, T0, numeric MET (including negative times), camera and pan offset, speed, layer toggles and an open observer site. Height is fixed at true scale (×1). Panel visibility is a per-browser convenience; blocked storage is tolerated.
 - Live clock operates only within the modeled time span; it does not extrapolate a flight outside the data.
 
 Example:
@@ -35,13 +35,13 @@ Example:
 
 ## Adaptive map detail
 
-Map imagery now refines automatically with zoom, viewport size and display pixel density. The permanent 4096 × 2048 globe is the fallback; only visible higher-detail tiles are requested. The local pyramid provides equivalent world widths of 5400, 10800 and **21600 pixels**, capped at the native **21600 × 10800** NASA Blue Marble source. Zooming closer cannot reveal detail absent from that source.
+Map imagery now refines automatically with zoom, viewport size and display pixel density. The permanent 4096 × 2048 globe is the fallback; only visible higher-detail tiles are requested. The local pyramid (672 tiles) provides equivalent world widths of 5400, 10800 and **21600 pixels**, capped at the native **21600 × 10800** NASA Blue Marble source. Zooming closer cannot reveal detail absent from that source.
 
 - Tile selection uses projected pixels per radian, camera frustum and Earth-horizon culling. Twelve-percent hysteresis avoids switching repeatedly at a zoom threshold; selection updates at most every 160 ms. Four image requests may be in flight.
-- A strict **32-entry LRU**, including in-flight entries, bounds tile residency (about **75 MiB** worst-case RGBA+mipmap tile allocation, additional to the base globe, overlay and vector data). If a view would exceed that count, the imagery level is reduced. Failed tiles are retried after a 30-second cooldown. Missing detail leaves the base map visible; no blank holes or external tile/API service is needed.
-- Adjacent tiles include a wrapped/clamped one-pixel gutter. Tile shaders share the same illumination, city lights and geographic overlays as the base globe. The old unconditional global 8K download is no longer used.
+- A strict **32-entry LRU**, including in-flight entries, bounds tile residency (about **75 MiB** worst-case RGBA+mipmap tile allocation, additional to the base globe, night-light texture and vector data). If a view would exceed that count, the imagery level is reduced. Failed tiles are retried after a 30-second cooldown. Missing detail leaves the base map visible; no blank holes or external tile/API service is needed.
+- Adjacent tiles include a wrapped/clamped one-pixel gutter. Tile shaders share the same illumination and city lights as the base globe. The former global 8K texture has been removed; local tiles supersede it.
 - Administrative boundaries are **screen-space vector lines**, not pixels enlarged from a fixed 4K overlay. Coarse, medium and fine geometries load with zoom, at 0.10°, 0.02° and 0.0025° simplification tolerances. These are generalized **Natural Earth 1:10 million** sources, not survey boundaries. At most two parsed levels are retained, and only one vector geometry level is rendered.
-- Day imagery refines; the existing global night-light texture and graticule/NOTAM fill overlay remain at their existing resolution. Trajectory, sunlight calculations and mission data are unchanged.
+- The 10° graticule and NOTAM zone fill are vector geometry, sharp at every zoom; no full-globe overlay image is kept. Day imagery refines; the global night-light texture keeps its existing resolution. Trajectory, sunlight calculations and mission data are unchanged.
 
 ### China-claims land-boundary view
 
@@ -77,7 +77,7 @@ The exporter resamples the existing solution; it does not fit or integrate a new
 - Sun vectors come from **JPL DE440s**, geometric Earth-to-Sun positions in ITRS/ECEF, at 30-second cadence. Linear interpolation covers all allowed T0/MET combinations, including the prelaunch interval; no extrapolation is allowed.
 - Sunlight requires the vehicle-to-Sun-centre segment to miss the WGS84 ellipsoid. There is **no 34′ refraction adjustment**. The first pickup agrees with the source calculation to within 0.001 s; this is an export consistency check, not predictive timing accuracy.
 - The instantaneous **15° circle** is a spherical minimum-elevation footprint, drawn dashed green (`#199e70`). It has no observer-night mask and is not an accumulated ascent envelope. The globe's **solid yellow Sun 0°** and **solid cyan Sun −12°** contours move with playback UTC.
-- Source-model visibility-analysis helpers remain available for validation, but the viewer neither loads the visibility worker nor draws its fill, boundary or labels. The archived method unions sunlit-ascent samples with vehicle elevation ≥15° and observer Sun ≤0° at the same time, with an additional insertion-time darkness mask.
+- The source-model visibility-analysis helper is kept outside the published site in `tools/visibility.js` for validation; the viewer does not compute or draw an envelope. The archived method unions sunlit-ascent samples with vehicle elevation ≥15° and observer Sun ≤0° at the same time, with an additional insertion-time darkness mask.
 - Sky-chart pass badges count sampled time with a sunlit vehicle, elevation ≥15°, and observer Sun ≤0°. They include ascent and orbital passes and are independent of the instantaneous circle. AOS/LOS are drawn at a 1° elevation threshold.
 - Glow is an illustration, not a prediction of plume size, persistence, brightness or detectability. No terrain, weather, extinction, refraction or finite-disc emergence is modeled.
 - Physics and look angles use WGS84 km; the textured globe is spherical for drawing, with heights at true scale. Moon and star rendering use approximate astronomy.
@@ -85,11 +85,12 @@ The exporter resamples the existing solution; it does not fit or integrate a new
 ## Files and reproducibility
 
 - `docs/index.html`: static page and styling.
-- `docs/js/app.js`: scene and controls; `profile.js`: validation, tracks and geometric sunlight; `astro.js`, `skychart.js`: astronomy and observer charts. `visibility*.js` are retained source-model analysis helpers, not loaded by the viewer.
+- `docs/js/app.js`: scene and controls; `profile.js`: validation, tracks and geometric sunlight; `astro.js`, `skychart.js`: astronomy and observer charts.
 - `docs/js/cities.js`: curated city-centre catalog and zoom-tier thresholds, shared by the globe and city-label sky-chart links.
 - `docs/data/profiles.json`: profile/mission manifest, with explicit defaults.
 - `docs/data/boundaries{,-medium,-fine}.json`: three consistent detail levels for worldwide country borders and China-only regional lines. `boundaries.js` validates and tessellates independent lines; `boundary-layer.js` renders screen-space vectors with zoom-dependent detail.
 - `docs/js/map-lod.js`, `map-tiles.js`: screen-space tile selection, native-detail cap, bounded request/cache management and patch rendering. `docs/tex/tiles/manifest.json` records every tile hash and the source image hash; image attribution is in `docs/tex/TILES-LICENSE.txt`.
+- `tools/visibility.js`: archived source-model visibility analysis, used by the unit tests only and not published.
 - `tools/export_map_tiles.py`: reproducible local JPEG pyramid generation from the shared 21600 × 10800 Blue Marble source.
 - `tools/export_boundaries.py`: pinned, reproducible boundary-data simplification; see `docs/data/BOUNDARIES-LICENSE.txt` for source URLs, licenses and rebuild commands.
 - `docs/data/yaogan50-03.json`: self-contained first mission, including tracks, solar vectors, zones, events and synthetic TLE.

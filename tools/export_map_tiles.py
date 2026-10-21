@@ -8,6 +8,8 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
+# The 4096 × 2048 base globe covers coarser views, so the pyramid starts at 5400 pixels wide.
+MIN_LEVEL, MAX_LEVEL = 1, 3
 DEFAULT_SOURCE = Path.home() / 'sda/basemaps/world.topo.bathy.200409.3x21600x10800.jpg'
 Image.MAX_IMAGE_PIXELS = 250_000_000
 
@@ -25,10 +27,10 @@ def build(source, output, check=False):
                        'width': 21600, 'height': 10800,
                        'url': 'https://visibleearth.nasa.gov/collection/1484/blue-marble'},
             'tile_size': 675, 'gutter': 1, 'base_columns': 4, 'base_rows': 2,
-            'max_level': 3, 'format': 'jpg', 'quality': 84,
+            'min_level': MIN_LEVEL, 'max_level': MAX_LEVEL, 'format': 'jpg', 'quality': 84,
             'levels': [], 'tiles': {},
         }
-        for level in range(4):
+        for level in range(MIN_LEVEL, MAX_LEVEL + 1):
             cols, rows = 4 << level, 2 << level
             width, height = cols * 675, rows * 675
             image = original if original.size == (width, height) else original.resize((width, height), Image.Resampling.LANCZOS)
@@ -56,6 +58,15 @@ def build(source, output, check=False):
                         dest.write_bytes(content)
                     manifest['tiles'][name] = hashlib.sha256(content).hexdigest()
             print(f'Level {level}: {width} × {height}, {cols * rows} tiles', flush=True)
+        stale = sorted(p for p in output.rglob('*.jpg') if p.relative_to(output).as_posix() not in manifest['tiles'])
+        if check and stale:
+            raise ValueError(f'Unlisted tiles: {", ".join(p.relative_to(output).as_posix() for p in stale[:5])}')
+        for path in stale:
+            path.unlink()
+        for folder in sorted({p.parent for p in stale}, key=lambda p: len(p.parts), reverse=True):
+            while folder != output and folder.is_dir() and not any(folder.iterdir()):
+                folder.rmdir()
+                folder = folder.parent
         content = json.dumps(manifest, indent=2) + '\n'
         path = output / 'manifest.json'
         if check:

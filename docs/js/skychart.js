@@ -215,10 +215,19 @@ export function createSkyChart({ shipAt, metEnd, styleAt, seco, vehicle, getStat
     onSite({ ...city });
     render();
   }
-  // site: {name, lat, lon} for a city, or {lat, lon, custom: true}; focus = put the cursor in the latitude box
-  async function open(site, focus = false) {
+  // keep a picked screen point uncovered on wide screens by moving the window beside it
+  function keepClear({ x, y }) {
+    const r = win.getBoundingClientRect(), gap = 28;
+    if (innerWidth <= 860 || x < r.left - gap || x > r.right + gap || y < r.top || y > r.bottom) return;
+    if (x + gap + r.width <= innerWidth - 16) win.style.left = (x + gap) + 'px';
+    else if (x - gap - r.width >= 16) win.style.left = (x - gap - r.width) + 'px';
+  }
+  // site: {name, lat, lon} for a city, or {lat, lon, custom: true}; focus = put the cursor in the latitude box;
+  // near = client {x, y} where the site was picked
+  async function open(site, focus = false, near = null) {
     if (!win) build();
     win.style.display = 'flex';
+    if (near) keepClear(near);
     resize();
     await load();
     setSite(site);

@@ -31,6 +31,13 @@ try{
   async function navigate(url){await call('Page.navigate',{url});await wait('!!window.__cz6a && !document.getElementById("loading")');}
   async function shot(name){await delay(300);const r=await call('Page.captureScreenshot',{format:'png'});await fs.writeFile(new URL(name,output),Buffer.from(r.data,'base64'));}
   const check=(name,ok)=>{assert.ok(ok,name);checks.push(name);};
+  const mouse=(type,[x,y],button='none',buttons=0)=>call('Input.dispatchMouseEvent',{type,x,y,button,buttons,clickCount:type==='mouseMoved'?0:1});
+  async function drag(button,from,to){const buttons=button==='right'?2:1;await mouse('mousePressed',from,button,buttons);for(let i=1;i<=8;i++)await mouse('mouseMoved',[from[0]+(to[0]-from[0])*i/8,from[1]+(to[1]-from[1])*i/8],button,buttons);await mouse('mouseReleased',to,button,0);await delay(900);}
+  const touch=(type,points)=>call('Input.dispatchTouchEvent',{type,touchPoints:points.map(([x,y],id)=>({x,y,id}))});
+  // Nearest-to-centre globe point that is canvas (not a label or panel), away from the track, with canvas on both sides.
+  const groundPoint=(spread=0)=>`(()=>{const v=document.getElementById("view").getBoundingClientRect(),cx=v.left+v.width/2,cy=v.top+v.height/2,points=[];for(let fy=.15;fy<=.85;fy+=.025)for(let fx=.15;fx<=.85;fx+=.025)points.push([Math.round(v.left+v.width*fx),Math.round(v.top+v.height*fy)]);points.sort((a,b)=>Math.hypot(a[0]-cx,a[1]-cy)-Math.hypot(b[0]-cx,b[1]-cy));const canvas=(x,y)=>document.elementFromPoint(x,y)?.tagName==="CANVAS";return points.find(([x,y])=>canvas(x,y)&&canvas(x-${spread},y)&&canvas(x+${spread},y)&&__cz6a.pick(x,y)&&!__cz6a.trackAt(x,y))||null;})()`;
+  const screenOf=(ll)=>`(()=>{const s=${ll},r=document.getElementById("view").getBoundingClientRect(),c=Math.cos(s.lat*Math.PI/180),p=__cz6a.camera.position.clone().set(c*Math.cos(s.lon*Math.PI/180),Math.sin(s.lat*Math.PI/180),-c*Math.sin(s.lon*Math.PI/180)).project(__cz6a.camera);return [(p.x+1)*r.width/2+r.left,(1-p.y)*r.height/2+r.top];})()`;
+  const near=(a,b,tolerance)=>Math.hypot(a[0]-b[0],a[1]-b[1])<tolerance;
   await call('Runtime.enable');await call('Page.enable');await call('Network.enable');
   await call('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
   await navigate(base);
@@ -46,7 +53,9 @@ try{
   await wait('__cz6a.mapLOD.stats().active===0 && __cz6a.mapLOD.stats().visible>0 && __cz6a.boundaries.stats().level==="medium"');
   const mediumBoundarySegments=await evaluate('__cz6a.boundaries.stats().segments');
   check('regional view loads only visible higher-resolution image tiles',await evaluate('__cz6a.mapLOD.stats().worldWidth>4096 && __cz6a.mapLOD.stats().wanted<=32 && __cz6a.mapLOD.stats().visible>0'));
-  check('borders are screen-space vectors in the China-claims view',await evaluate('__cz6a.boundaries.group.children[0].children.every(x=>x.isLineSegments2) && __cz6a.boundaries.stats().worldview==="China claims" && document.getElementById("credit").textContent.includes("China-claims")'));
+  check('borders are screen-space vectors in the China-claims view',await evaluate('__cz6a.boundaries.group.children[0].children.every(x=>x.isLineSegments2) && __cz6a.boundaries.stats().worldview==="China claims"'));
+  check('graticule and NOTAM fill are vector geometry with no full-globe overlay texture',await evaluate('__cz6a.groups.gridGroup.children[0].isLineSegments2 && __cz6a.groups.gridGroup.visible && __cz6a.groups.zoneGroup.children.some(o=>o.isMesh && o.geometry.attributes.position.count>=3) && !("ovTex" in __cz6a.earth.uniforms)'));
+  check('credit line names only the illustration and base map',await evaluate('document.getElementById("credit").textContent==="Illustration: Mickey · base map NASA Blue Marble"'));
   const mapShot=async()=>Buffer.from((await call('Page.captureScreenshot',{format:'png',clip:{x:420,y:160,width:600,height:600,scale:1}})).data,'base64');
   const boundaryPixels=await mapShot();
   await shot('desktop.png');
@@ -84,6 +93,9 @@ try{
   for(const [lon,lat]of [[179,20],[-179,-25],[0,82],[-100,38],[80,24],[99,34]]){await evaluate(`__cz6a.flyTo(${lon},${lat},1.22)`);await delay(1350);if(lon===-100)await shot('usa-country-borders-only.png');if(lon===80)await shot('india-country-borders-only.png');}
   await wait('__cz6a.mapLOD.stats().active===0');
   check('rotation and polar/dateline views stay within cache and concurrency budgets',await evaluate('__cz6a.mapLOD.stats().resident<=32 && __cz6a.mapLOD.stats().peak<=32 && __cz6a.mapLOD.stats().active<=4 && __cz6a.mapLOD.stats().failures===0'));
+  await evaluate('__cz6a.flyTo(109,38.6,1.15)');await delay(1500);await wait('__cz6a.mapLOD.stats().active===0');
+  check('NOTAM fill and graticule remain vector layers at native-detail zoom',await evaluate('__cz6a.mapLOD.stats().level===3 && __cz6a.groups.zoneGroup.visible && __cz6a.groups.gridGroup.visible'));
+  await shot('notam-zone-closeup.png');
   await evaluate('__cz6a.flyTo(99,34,2.15)');await delay(1400);
 
   await evaluate('document.getElementById("o-jelly").click()');await delay(200);
@@ -113,10 +125,32 @@ try{
   await wait('!!document.querySelector(".skw") && document.querySelector(".skw-title .sub").textContent.includes("Chengdu")');
   check('sky chart loads star data and pass geometry',await evaluate('document.querySelector(".skc-passes").textContent.length>0 && document.querySelector(".skc-hud").textContent.includes("AZ")'));
   await shot('sky-chart.png');await evaluate('__cz6a.sky.close();__cz6a.setMet(-90);document.getElementById("o-grid").click();document.getElementById("o-borders").click()');
+  const point=await evaluate(groundPoint());assert.ok(point,'clickable globe point away from the track');
+  await mouse('mouseMoved',point);await delay(150);
+  check('hovering open ground shows a location-pick cursor',await evaluate('document.querySelector("#view canvas").style.cursor==="crosshair"'));
+  await mouse('mousePressed',point,'left',1);await mouse('mouseReleased',point,'left',0);
+  await wait('__cz6a.sky.isOpen() && !!__cz6a.sky.site()?.custom');
+  check('clicking anywhere on the globe opens the sky chart for that ground point',near(await evaluate(screenOf('__cz6a.sky.site()')),point,2) && await evaluate('document.querySelector(".skw-title .sub").textContent.includes("°N")'));
+  await wait('__cz6a.observerMarker.visible');
+  check('selected observer site is marked and left uncovered by the chart',await evaluate(`__cz6a.observerMarker.visible && document.elementFromPoint(${point})?.tagName==="CANVAS"`));
+  await shot('globe-click-sky-chart.png');await evaluate('__cz6a.sky.close()');
+  await drag('left',point,[point[0]+140,point[1]+40]);
+  check('rotating drag does not open a sky chart or pan',await evaluate('!__cz6a.sky.isOpen() && __cz6a.controls.target.length()<1e-6'));
+  const panFrom=await evaluate(groundPoint());
+  await mouse('mousePressed',panFrom,'right',2);await mouse('mouseReleased',panFrom,'right',0);await delay(300);
+  check('right-click does not open a sky chart',await evaluate('!__cz6a.sky.isOpen()'));
+  const grabbed=JSON.stringify(await evaluate(`__cz6a.pick(${panFrom})`)),panTo=[panFrom[0]+160,panFrom[1]+90];
+  await drag('right',panFrom,panTo);
+  check('right-drag pans the view with the ground following the pointer',near(await evaluate(screenOf(grabbed)),panTo,.15*Math.hypot(160,90)) && await evaluate('__cz6a.controls.target.length()>.01 && __cz6a.controls.target.length()<=.95+1e-6 && __cz6a.camera.position.length()>=1.05-1e-6 && !__cz6a.sky.isOpen()'));
+  await shot('right-drag-pan.png');
+  const panned=await evaluate('__cz6a.controls.target.toArray()');
   const url=await evaluate('__cz6a.shareURL()');await navigate(url);
-  check('share link restores negative MET and toggles',await evaluate('__cz6a.state.met===-90 && !__cz6a.state.show.grid && __cz6a.state.show.fp && !__cz6a.state.show.borders && !document.getElementById("o-borders").checked'));
-  await navigate(base+'?t0=bad&met=NaN&exag=NaN&cam=1,2,0');
-  check('malformed URL input safely defaults or clamps',await evaluate('__cz6a.state.t0===36900 && __cz6a.state.met===300 && __cz6a.camera.position.length()>=1.049'));
+  check('share link restores negative MET and toggles',await evaluate('__cz6a.state.met===-90 && !__cz6a.state.show.grid && __cz6a.state.show.fp && !__cz6a.state.show.borders && !document.getElementById("o-borders").checked && !__cz6a.groups.gridGroup.visible'));
+  check('share link restores the pan offset',await evaluate(`__cz6a.controls.target.toArray().every((v,i)=>Math.abs(v-${JSON.stringify(panned)}[i])<2e-4)`));
+  await evaluate('document.querySelector("[data-view=\\"0\\"]").click()');await delay(1500);
+  check('camera presets recenter a panned view',await evaluate('__cz6a.controls.target.length()<1e-6'));
+  await navigate(base+'?t0=bad&met=NaN&exag=NaN&cam=1,2,0&pan=9,0,0');
+  check('malformed URL input safely defaults or clamps',await evaluate('__cz6a.state.t0===36900 && __cz6a.state.met===300 && __cz6a.camera.position.length()>=1.049 && __cz6a.controls.target.length()<=.95+1e-6'));
   await navigate(base+'?vis=0&exag=5');
   check('obsolete layer and height URL controls are ignored',await evaluate('!__cz6a.groups.visGroup && !new URL(__cz6a.shareURL()).searchParams.has("vis") && !new URL(__cz6a.shareURL()).searchParams.has("exag")'));
   await navigate(base+'?borders=0');
@@ -131,11 +165,22 @@ try{
   await shot('mobile-controls.png');await evaluate('document.getElementById("skybtn").click()');await wait('document.querySelector(".skw-title .sub")?.textContent.includes("Chengdu")');
   check('mobile sky chart stays within viewport',await evaluate('(()=>{const r=document.querySelector(".skw").getBoundingClientRect();return r.left>=16 && r.right<=innerWidth-16;})()'));
   await shot('mobile-sky-chart.png');
+  await evaluate('__cz6a.sky.close();document.querySelector("[data-panel=ctl]").click()');await delay(200);
+  await call('Emulation.setTouchEmulationEnabled',{enabled:true,maxTouchPoints:5});
+  const pinch=await evaluate(groundPoint(50));assert.ok(pinch,'two-finger globe point');
+  const range=await evaluate('__cz6a.camera.position.distanceTo(__cz6a.controls.target)');
+  await touch('touchStart',[[pinch[0]-50,pinch[1]],[pinch[0]+50,pinch[1]]]);for(let i=1;i<=8;i++)await touch('touchMove',[[pinch[0]-50+8*i,pinch[1]+10*i],[pinch[0]+50+8*i,pinch[1]+10*i]]);await touch('touchEnd',[]);await delay(900);
+  check('two-finger touch drag pans without zooming or opening a sky chart',await evaluate(`__cz6a.controls.target.length()>.005 && Math.abs(__cz6a.camera.position.distanceTo(__cz6a.controls.target)/${range}-1)<.05 && !__cz6a.sky.isOpen()`));
+  const tap=await evaluate(groundPoint());assert.ok(tap,'tappable globe point');
+  await touch('touchStart',[tap]);await touch('touchEnd',[]);
+  await wait('__cz6a.sky.isOpen() && !!__cz6a.sky.site()?.custom');
+  check('tapping the globe opens the sky chart for that ground point',near(await evaluate(screenOf('__cz6a.sky.site()')),tap,2));
+  await shot('mobile-globe-tap.png');await evaluate('__cz6a.sky.close()');
   await call('Emulation.setDeviceMetricsOverride',{width:320,height:740,deviceScaleFactor:1,mobile:true});await delay(200);
   check('320px viewport has no horizontal page overflow',await evaluate('document.documentElement.scrollWidth<=innerWidth'));
   check('boundary data loads from the site itself',requests.some((url)=>url.startsWith(new URL(base).origin)&&url.endsWith('/data/boundaries.json')));
   check('no unconditional global 8K texture is requested',!requests.some((url)=>url.includes('earth_day_8k.jpg')));
-  check('image tiles and boundary detail are hosted locally',requests.some((url)=>url.includes('/tex/tiles/3/')) && requests.some((url)=>url.endsWith('/data/boundaries-fine.json')));
+  check('image tiles and boundary detail are hosted locally',requests.some((url)=>url.includes('/tex/tiles/3/')) && requests.some((url)=>url.endsWith('/data/boundaries-fine.json')) && !requests.some((url)=>url.includes('/tex/tiles/0/')));
   check('no visibility analysis or worker is loaded',!requests.some((url)=>/\/visibility(?:-worker)?\.js(?:[?#]|$)/.test(url)));
   check('no JavaScript or failed-resource errors',errors.length===0);
   const storageBlock=await call('Page.addScriptToEvaluateOnNewDocument',{source:'Object.defineProperty(window,"localStorage",{get(){throw new Error("Storage disabled by test");}})'});

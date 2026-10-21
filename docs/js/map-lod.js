@@ -1,5 +1,5 @@
 const RAD=Math.PI/180;
-export const TILE_CONFIG={tileSize:675,gutter:1,baseColumns:4,baseRows:2,maxLevel:3,maxTiles:32,concurrency:4};
+export const TILE_CONFIG={tileSize:675,gutter:1,baseColumns:4,baseRows:2,minLevel:1,maxLevel:3,maxTiles:32,concurrency:4};
 
 export function worldPixels(level){return TILE_CONFIG.tileSize*(TILE_CONFIG.baseColumns<<level);}
 export function projectedPixels(distance,fov,height,pixelRatio=1){
@@ -20,7 +20,7 @@ export function chooseLevel(required,previous=-1){
 export function boundaryLevel(required){return required>10800?'fine':required>4096?'medium':'coarse';}
 export function tileBounds(level,x,y){
   const columns=TILE_CONFIG.baseColumns<<level,rows=TILE_CONFIG.baseRows<<level;
-  if(!Number.isInteger(level)||level<0||level>3||!Number.isInteger(x)||!Number.isInteger(y)||x<0||x>=columns||y<0||y>=rows)throw new Error('Invalid map tile');
+  if(!Number.isInteger(level)||level<TILE_CONFIG.minLevel||level>TILE_CONFIG.maxLevel||!Number.isInteger(x)||!Number.isInteger(y)||x<0||x>=columns||y<0||y>=rows)throw new Error('Invalid map tile');
   return {level,x,y,columns,rows,west:x*360/columns-180,east:(x+1)*360/columns-180,north:90-y*180/rows,south:90-(y+1)*180/rows,key:`${level}/${x}/${y}`};
 }
 export function tileUV(tile,u,v){return [(tile.x+u)/tile.columns,1-(tile.y+1-v)/tile.rows];}

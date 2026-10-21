@@ -11,9 +11,10 @@ const tile=(n)=>({key:String(n)});
 test('image pyramid reaches but never exceeds the native Blue Marble pixels',()=>{
   const root=new URL('../docs/tex/tiles/',import.meta.url),manifest=JSON.parse(fs.readFileSync(new URL('manifest.json',root)));
   assert.equal(manifest.source.width,21600);assert.equal(manifest.source.height,10800);
-  assert.equal(manifest.tile_size,TILE_CONFIG.tileSize);assert.equal(manifest.max_level,TILE_CONFIG.maxLevel);
+  assert.equal(manifest.tile_size,TILE_CONFIG.tileSize);assert.equal(manifest.max_level,TILE_CONFIG.maxLevel);assert.equal(manifest.min_level,TILE_CONFIG.minLevel);
   assert.equal(manifest.base_columns,TILE_CONFIG.baseColumns);assert.equal(manifest.gutter,TILE_CONFIG.gutter);
-  assert.equal(Object.keys(manifest.tiles).length,680);
+  assert.equal(Object.keys(manifest.tiles).length,672);assert.deepEqual(manifest.levels.map((entry)=>entry.level),[1,2,3]);
+  assert.ok(!fs.existsSync(new URL('0/',root)),'Unused 2700-pixel level is not published');
   for(const entry of manifest.levels){assert.equal(entry.width,worldPixels(entry.level));assert.ok(entry.width<=manifest.source.width);}
   let bytes=0;
   for(const [file,hash]of Object.entries(manifest.tiles)){const content=fs.readFileSync(new URL(file,root));bytes+=content.length;assert.equal(createHash('sha256').update(content).digest('hex'),hash,file);}
@@ -32,13 +33,13 @@ test('screen-space detail grows with zoom, viewport and pixel density, with a na
 });
 
 test('tile coordinates match the global equirectangular shader at seams and poles',()=>{
-  for(const z of [0,1,2,3]){
+  for(const z of [1,2,3]){
     const first=tileBounds(z,0,0),last=tileBounds(z,first.columns-1,first.rows-1);
     assert.equal(first.west,-180);assert.equal(first.north,90);assert.equal(last.east,180);assert.equal(last.south,-90);
     assert.deepEqual(tileUV(first,0,1),[0,1]);assert.deepEqual(tileUV(last,1,0),[1,0]);
     const next=tileBounds(z,1,0);assert.deepEqual(tileUV(first,1,.4),tileUV(next,0,.4));
   }
-  assert.throws(()=>tileBounds(3,-1,0));assert.throws(()=>tileBounds(4,0,0));
+  assert.throws(()=>tileBounds(3,-1,0));assert.throws(()=>tileBounds(4,0,0));assert.throws(()=>tileBounds(0,0,0));
 });
 
 test('tile cache bounds resident and concurrent textures during repeated views',async()=>{

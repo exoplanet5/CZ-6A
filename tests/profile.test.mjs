@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as A from '../docs/js/astro.js';
 import {validateManifest,validateMission,selectProfile,createFlight,solarEphemeris,sunlightClearance,computeJelly,clockSeconds,Track} from '../docs/js/profile.js';
-import {calculateVisibility,contour} from '../docs/js/visibility.js';
+import {calculateVisibility,contour} from '../tools/visibility.js';
 const load=(name)=>JSON.parse(fs.readFileSync(new URL('../docs/data/'+name,import.meta.url)));
 const data=load('yaogan50-03.json'),index=load('profiles.json'),T0=Date.parse(data.tle_ref.t0),flight=createFlight(data),sun=solarEphemeris(data.sun);
 const near=(a,b,tol=1e-7)=>assert.ok(Math.abs(a-b)<tol,`${a} vs ${b}`);

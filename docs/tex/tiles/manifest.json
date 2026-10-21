@@ -12,17 +12,11 @@
   "gutter": 1,
   "base_columns": 4,
   "base_rows": 2,
+  "min_level": 1,
   "max_level": 3,
   "format": "jpg",
   "quality": 84,
   "levels": [
-    {
-      "level": 0,
-      "columns": 4,
-      "rows": 2,
-      "width": 2700,
-      "height": 1350
-    },
     {
       "level": 1,
       "columns": 8,
@@ -46,14 +40,6 @@
     }
   ],
   "tiles": {
-    "0/0/0.jpg": "4f945f5616d1e8be0f03ce768207a5ae8c1c6fdf9342c2300568da46f4de0005",
-    "0/1/0.jpg": "192ba963c81f2bc1bb922206ba5f849413cfa38b1b0a09f77b689e1103c993b5",
-    "0/2/0.jpg": "c9b95bece4e9f1c659b58d87b5c801094a5d37d8a4b85f972a1f708d0695d038",
-    "0/3/0.jpg": "a7a1e13f53f2eb9b480f7b4723e3da4248834bbadcf3a3e862e9265d07c09076",
-    "0/0/1.jpg": "8f30daa6e752dc2d544b4ec7d1d5b9d32ac6d93be7e0d09a0eaaad220d942b85",
-    "0/1/1.jpg": "eb38392c9eef4c4a1820a6dd30baa6d59265fbe2d7c0e9efff37872735822622",
-    "0/2/1.jpg": "8228e3ff58c1543756989abbbb68ef53ccea15bd4dc71b296a67fade49456008",
-    "0/3/1.jpg": "7ecd45f9814c9aee45ad99084d5cdc795f3cbbe0d33fa3311d011afccefacaae",
     "1/0/0.jpg": "c25bc7c0acd88309084ae08b28a8deb3f41bc7ae950146035d5341d97183c8e0",
     "1/1/0.jpg": "cf91339ce25a5fccaa5b6111f733843a59cd194a67959860584edff992b40541",
     "1/2/0.jpg": "bbf44de15f902c9276e4c736453dcc7beeeb21a01a73cdfdada82d76b43cdc01",

@@ -1,5 +1,5 @@
-import * as A from './astro.js';
-import {createFlight, solarEphemeris, sunlightClearance} from './profile.js';
+import * as A from '../docs/js/astro.js';
+import {createFlight, solarEphemeris, sunlightClearance} from '../docs/js/profile.js';
 
 export function calculateVisibility(data, T0) {
   const {tracks} = createFlight(data), asc = tracks.ascent, sunAt = solarEphemeris(data.sun), cfg = data.meta.visibility;
