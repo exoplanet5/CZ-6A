@@ -2,7 +2,7 @@
 
 Interactive Earth-fixed launch trajectories, twilight illumination and observer sky charts, adapted from the [ZhuQue viewer](https://github.com/exoplanet5/ZhuQue) and SatObserver-MX / Starship IFT-14 presentation.
 
-**First and default profile: retrograde, 142° inclination.** Its first mission is the conditional Yaogan-50 03 scenario for **2026-10-23, T0 10:15 UTC**, from Taiyuan LC-9A. This is **not an SSO mission**. The Zhuque SSO reconstruction is a visualization reference, not a source of CZ-6A engine, staging or orbital assumptions.
+**First and default profile: retrograde, 142° inclination.** Its first mission is the Yaogan-50 03 reconstruction for **2026-10-23, T0 10:15 UTC** (announced 18:15 Beijing time), from Taiyuan LC-9A. This is **not an SSO mission**. The Zhuque SSO reconstruction is a visualization reference, not a source of CZ-6A engine, staging or orbital assumptions.
 
 ## Run locally
 
@@ -53,14 +53,15 @@ Arunachal Pradesh is administered by India and claimed by China. This is an expl
 
 ## Current configuration
 
-| Quantity | Conditional value |
+| Quantity | Value (revision 2) |
 |---|---:|
-| Insertion inclination | 142.0017° |
-| Osculating perigee × apogee | 714.1 × 957.2 km |
-| Insertion | T+779.98 s, about 10:28 UTC |
-| Sunlight pickup | T+106.07 s, 40.55 km WGS84 altitude |
-| Playback end | T+9926.32 s, about 13:00:26 UTC |
-| Orbit coverage after insertion | 1.5 × 6097.5577 s |
+| Insertion inclination | 141.9815° |
+| Osculating perigee × apogee | 695.4 × 952.9 km |
+| Insertion | T+773.38 s, about 10:27:53 UTC |
+| Cutoff state vs. catalog object 2026-240A | 3.4 km |
+| Sunlight pickup | T+101.0 s, 43.18 km WGS84 altitude |
+| Playback end | T+9897.8 s, about 12:59:58 UTC |
+| Orbit coverage after insertion | 1.5 × 6082.94 s |
 | Hazard polygon | A5283/26, booster drop zone |
 | Published hazard interval | 10:07–10:28 UTC |
 
@@ -68,9 +69,11 @@ Arunachal Pradesh is administered by India and claimed by China. This is an expl
 
 ### Scientific limitations
 
-The current trajectory transfers a prior-flight template and orbit-family priors; it is not October telemetry and the fit residual is not a prediction confidence interval. The dogleg is attributed to **stage 1**, and the supplied NOTAM to **boosters**. The numerical surrogate has **not been refitted to that corrected physical staging sequence**. Consequently, no timed dogleg, staging, separation, debris trajectory or impact event is invented in the viewer. Older stage-specific column values in the archived source CSV are numerical-model decomposition, not validated physical event assignments.
+Revision 2 (2026-10-24) replaces the kinematic lower ascent with a point-mass first-stage model. Its propulsion surrogate is calibrated on the triangulated December 2025 CZ-6A ascent. The model is fitted to two untimed ground reports. At N39.00 E110.12 the rocket crossed above the Moon at about 1.6 × its elevation; the model gives 1.58 ×. At N37.76 E110.93 the sunlit rising path looked nearly straight; the model gives a +1.3° great-circle offset. A ballistic booster range is also fitted to the NOTAM booster zone. The reports constrain **climb geometry, not timing**. The climb is much steeper than before, about 61 km altitude at 54 km ground range against 39 km, while altitude versus time changes little. The upper stage is fitted to the first catalog orbit of 2026-240A, assumed to be the payload; its identity is unconfirmed. This is not telemetry, and fit residuals are not confidence intervals.
 
-The exporter resamples the existing solution; it does not fit or integrate a new launch. T0 shifts leave the Earth-fixed trajectory unchanged. The TLE is explicitly **PRELAUNCH MODEL — NOT OBSERVED**, with placeholder catalog number 00000; the page displays numerical samples rather than propagating that TLE.
+The dogleg is attributed to **stage 1**, and the NOTAM to **boosters**. The plane change is still carried by the stage-2 steering surrogate. Modeled booster burnout/separation (T+88/134 s) and stage-2 ignition (T+230 s) are model quantities and are not shown as timeline events; no debris trajectory or impact time is shown. Full assumptions and sensitivity refits are in the source project README.
+
+The exporter resamples the existing solution; it does not fit or integrate a new launch. T0 shifts leave the Earth-fixed trajectory unchanged. The model TLE keeps its **PRELAUNCH MODEL — NOT OBSERVED** label and placeholder catalog number 00000; it is fitted to the reconstructed orbit, not the catalog element set. The page displays numerical samples rather than propagating that TLE.
 
 ### Illumination and visibility
 
@@ -136,4 +139,4 @@ The viewer is published at **https://exoplanet5.github.io/CZ-6A/**. GitHub Pages
 
 Illustration: Mickey. NASA Blue Marble Next Generation / Black Marble base textures. Administrative boundaries: [Natural Earth](https://www.naturalearthdata.com/), public domain; source revision and attribution are preserved in `docs/data/BOUNDARIES-LICENSE.txt` and `boundaries.json`. Three.js is vendored with its MIT license (`docs/vendor/three/LICENSE`). Star catalog and Milky Way data are from d3-celestial, BSD-3 (`docs/data/STARDATA-LICENSE.txt`). Sky-chart and viewer components are adapted from [ZhuQue](https://github.com/exoplanet5/ZhuQue) and [Starship IFT-14](https://github.com/exoplanet5/Starship-IFT14), with CZ-6A profile loading, geometric illumination, optional events/tracks and responsive controls added here. Code license: Apache-2.0, see `LICENSE`.
 
-The initial scientific source is the local `launch_traj_6A_reverse` reconstruction and supplied NOTAM A5283/26, issued 2026-10-17. The Yaogan-50 02 launch-time reference is [Next Spaceflight's March 15 flight record](https://nextspaceflight.com/launches/details/8186), also documented by [SciNews/CCTV](https://www.youtube.com/watch?v=L0gIO7TAA4g). Derived precursor orbit-family parameters inform the model; raw catalog downloads are not redistributed. This is an independent visualization, not official launch guidance or an official ephemeris.
+The scientific source is the local `launch_traj_6A_reverse` reconstruction (revision 2), the supplied NOTAM A5283/26 issued 2026-10-17, user-supplied ground reports, and the first Space-Track elements of 2026-240A. The Yaogan-50 02 launch-time reference is [Next Spaceflight's March 15 flight record](https://nextspaceflight.com/launches/details/8186), also documented by [SciNews/CCTV](https://www.youtube.com/watch?v=L0gIO7TAA4g). Derived precursor orbit-family parameters inform the model; raw catalog downloads are not redistributed. This is an independent visualization, not official launch guidance or an official ephemeris.

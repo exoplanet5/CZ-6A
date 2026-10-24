@@ -41,8 +41,8 @@ try{
   await call('Runtime.enable');await call('Page.enable');await call('Network.enable');
   await call('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
   await navigate(base);
-  check('default 142-degree profile',await evaluate('__cz6a.profile==="retrograde-142" && Math.abs(__cz6a.meta.inc-142)<.01'));
-  check('nominal sunlight pickup',await evaluate('Math.abs(__cz6a.jelly().pickup.met-106.068932)<.1'));
+  check('default 142-degree profile',await evaluate('__cz6a.profile==="retrograde-142" && Math.abs(__cz6a.meta.inc-142)<.05'));
+  check('nominal sunlight pickup',await evaluate('Math.abs(__cz6a.jelly().pickup.met-101.000755)<.1'));
   check('visibility envelope and Twilight jellyfish panel removed',await evaluate('!__cz6a.groups.visGroup && !document.getElementById("jelly") && !document.body.innerText.includes("Twilight jellyfish") && !document.getElementById("legend").textContent.includes("envelope")'));
   check('15-degree circle is green and enabled by default',await evaluate('__cz6a.state.show.fp && document.getElementById("o-fp").checked && __cz6a.footprint().visible && __cz6a.footprint().material.color.getHexString()==="199e70"'));
   check('circle legend matches its green dashed style',await evaluate('(()=>{const s=getComputedStyle(document.querySelector("#legend>div:nth-child(2) span:first-child i"));return s.borderTopColor==="rgb(25, 158, 112)" && s.borderTopStyle==="dashed";})()'));
@@ -99,9 +99,10 @@ try{
   await evaluate('__cz6a.flyTo(99,34,2.15)');await delay(1400);
 
   await evaluate('document.getElementById("o-jelly").click()');await delay(200);
+  check('no dashed shadow-height line and solid ground track',await evaluate('__cz6a.groups.jellyGroup.children.every(x=>!x.material.dashed) && __cz6a.groups.gtGroup.children.length>0 && __cz6a.groups.gtGroup.children.every(x=>!x.material.dashed)'));
   check('jelly toggle does not hide ascent or 15-degree circle',await evaluate('!__cz6a.groups.jellyGroup.visible && __cz6a.groups.trajGroup.visible && __cz6a.groups.trajGroup.children.length>=2 && __cz6a.footprint().visible'));
   await evaluate('__cz6a.setT0(39600)');
-  check('T0 changes illumination',await evaluate('!__cz6a.jelly().pickup || Math.abs(__cz6a.jelly().pickup.met-106)>1'));
+  check('T0 changes illumination',await evaluate('!__cz6a.jelly().pickup || Math.abs(__cz6a.jelly().pickup.met-101)>1'));
   await evaluate('__cz6a.setT0(36900);document.getElementById("o-jelly").click()');
   await evaluate('document.getElementById("o-fp").click()');await wait('!__cz6a.footprint().visible');
   check('15-degree circle can still be switched off',await evaluate('!__cz6a.state.show.fp && !__cz6a.footprint().visible'));

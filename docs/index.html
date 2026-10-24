@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>CZ-6A Launch Profiles</title>
-<meta name="description" content="Explore CZ-6A launch profiles, trajectories, twilight illumination and observer sky charts. First profile: the conditional 142-degree Yaogan-50 03 scenario.">
+<meta name="description" content="Explore CZ-6A launch profiles, trajectories, twilight illumination and observer sky charts. First profile: the 142-degree Yaogan-50 03 reconstruction.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='22' fill='%23123a5c'/%3E%3Cpath d='M10 40 Q32 8 56 26' stroke='%234fc3f7' stroke-width='4' fill='none'/%3E%3Ccircle cx='50' cy='22' r='5' fill='%23ffd54f'/%3E%3C/svg%3E">
 <style>
 :root{color-scheme:dark;--bg:#101418;--space:#05070a;--panel:rgba(23,28,34,.94);--surface:#1e242c;--input:#0c1014;--fg:#e8eaed;--dim:#9aa4ae;--border:#303a45;--accent:#4fc3f7;--accent-dim:#2a7ea8;--sun:#ffd54f;--halo:#05080c;--mono:Menlo,"SF Mono",Consolas,monospace;--bar:50px;--gutter:max(16px,env(safe-area-inset-left,0px));--right:max(16px,env(safe-area-inset-right,0px))}
@@ -87,7 +87,7 @@ table{width:100%;border-collapse:collapse;font-size:11px;font-variant-numeric:ta
 <p class="note">Published hazard windows are not liftoff or impact-time measurements. Impact timing is shown only when supplied by a profile.</p>
 <h2>Flight timeline</h2><table id="events"><thead><tr><th>MET · seek</th><th>UTC</th><th>Event</th></tr></thead><tbody></tbody></table>
 <h2>Synthetic TLE</h2><pre id="tle"></pre><button class="btn" id="copytle">Copy TLE</button>
-<p class="note">Pre-launch model, not an observed catalog object. A changed T0 shifts epoch and RAAN for the same Earth-fixed path; the viewer uses numerical track samples, not SGP4 propagation.</p>
+<p class="note">Model TLE fitted to the reconstructed orbit, not the catalog element set. A changed T0 shifts epoch and RAAN for the same Earth-fixed path; the viewer uses numerical track samples, not SGP4 propagation.</p>
 <h2>Model & sources</h2><div class="note" id="about"></div>
 </aside>
 <div id="inspect" hidden></div><div id="notice" role="status" aria-live="polite"></div>

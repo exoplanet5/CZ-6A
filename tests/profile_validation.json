@@ -14,39 +14,39 @@
     "sanitized_metadata": true
   },
   "source": {
-    "source_samples": 3221,
+    "source_samples": 3209,
     "source_interval_met_s": [
       0.0,
-      12975.094109
+      12939.25232
     ],
     "interpolation": "cubic Hermite in ECEF using transformed source velocities",
-    "source_frame_roundtrip_max_km": 7.066564569075284e-06
+    "source_frame_roundtrip_max_km": 7.149890256590936e-06
   },
   "tracks": {
     "ascent": {
-      "samples": 781,
+      "samples": 774,
       "met0": 0,
-      "dt_s": 0.9999726561107091,
-      "end_met_s": 779.978671766353,
-      "wgs84_roundtrip_max_km": 3.178612587362425e-06
+      "dt_s": 1.0004890038809833,
+      "end_met_s": 773.378,
+      "wgs84_roundtrip_max_km": 3.105380073975539e-06
     },
     "orbit": {
-      "samples": 1830,
-      "met0": 779.978671766353,
-      "dt_s": 5.000730769710857,
-      "end_met_s": 9926.315249567511,
-      "wgs84_roundtrip_max_km": 7.026165803836267e-06
+      "samples": 1826,
+      "met0": 773.378,
+      "dt_s": 4.999674377964744,
+      "end_met_s": 9897.783739785658,
+      "wgs84_roundtrip_max_km": 7.103949428710694e-06
     }
   },
-  "orbit_duration_s": 9146.336577801158,
+  "orbit_duration_s": 9124.405739785658,
   "orbit_duration_periods": 1.5,
   "insertion_join_ecef_km": 0.0,
   "sun": {
-    "samples": 536,
+    "samples": 535,
     "dt_s": 30,
     "start_utc": "2026-10-23T09:19:00Z",
-    "end_utc": "2026-10-23T13:46:30Z",
-    "required_end_utc": "2026-10-23T13:46:26.315250Z",
+    "end_utc": "2026-10-23T13:46:00Z",
+    "required_end_utc": "2026-10-23T13:45:57.783740Z",
     "minimum_prelaunch_met_s": -600,
     "kernel": {
       "file": "de440s.bsp",
@@ -54,11 +54,11 @@
     }
   },
   "nominal_pickup": {
-    "reference_met_s": 106.06893245155386,
-    "ecef_linear_met_s": 106.0686361362031,
-    "geodetic_linear_met_s": 106.06863020270161,
-    "ecef_linear_error_s": -0.00029631535076646287,
-    "geodetic_linear_error_s": -0.00030224885225038634
+    "reference_met_s": 101.00075462383785,
+    "ecef_linear_met_s": 101.00083888820492,
+    "geodetic_linear_met_s": 101.00083629065917,
+    "ecef_linear_error_s": 8.42643670750931e-05,
+    "geodetic_linear_error_s": 8.166682131616199e-05
   },
   "dependencies": {
     "numpy": "2.4.2",
@@ -68,13 +68,13 @@
     "jplephem": "2.24"
   },
   "inputs_sha256": {
-    "metadata.json": "81483c041b276b3fe1f0e1a859c9fcb20965d1673c6031a5b84be39b2baab250",
-    "Yaogan-50_03_trajectory.csv": "09dc524f8bb3fc7e739b8e91e23bcbb96d1dce84133f93f8e47dacea0d2b2e0c",
-    "Yaogan-50_03_prelaunch.tle": "6a4b784f4c614fd25b8d22a9786347bd7206b17ea8088baff9e3eb1be9c70e5c",
+    "metadata.json": "a007050443bc3ba08e36eddaf1f1cb12f1a29a0efb412f867ab3b6fea0279a5c",
+    "Yaogan-50_03_trajectory.csv": "d807325dc6a15736ea26a28ed8051282b9ec99f0cf3fc2ed9a67a8eee0e6f4de",
+    "Yaogan-50_03_prelaunch.tle": "a0497746a4ff8ef0ae671858f21f065f381e92da129f76a9a11489dbfab25014",
     "Launch_NOTAM_20261023_CZ-6A.kml": "474bbb9dc100868186622b95feb2564104939ab0b1a270c87a3c5726632f1d12"
   },
   "outputs_sha256": {
-    "yaogan50-03.json": "6b8d6cb5c9d61ebd74e1c3706f5cfa4c3bc71055e454df2598af98771db5add4",
+    "yaogan50-03.json": "335b70d645e0c5ab7a468f22449234a446faafd078dc57df4d6b3ddf4ccdefe9",
     "profiles.json": "e065090593e7465bb27a89c533a4638ffc35f8e61af272a1bb4661d830511937"
   }
 }

@@ -119,13 +119,11 @@ async function start() {
   function buildJellyLayer(){clear(jellyGroup);let run=[];
     const flush=()=>{if(run.length>=6){jellyGroup.add(line(run,{color:C.sun,width:8,opacity:.16}),line(run,{color:C.sun,width:2.6}));}run=[];};
     for(let i=0;i<ASC.n;i++){if(J.lit[i] && poweredAt(ASC.metAt(i)))run.push(...ASC.pt(i,1));else flush();}flush();
-    let shadow=[];const flushShadow=()=>{if(shadow.length>=6)jellyGroup.add(line(shadow,{color:C.dim,width:1.2,dashed:true,opacity:.8}));shadow=[];};
-    for(let i=0;i<ASC.n;i++){if(J.h[i]>0 && J.h[i]<1500)shadow.push(...ASC.pt(i,1,J.h[i]));else flushShadow();}flushShadow();
     if(J.pickup){pickup.position.set(...drawPoint(J.pickup));pickupLabel.position.copy(pickup.position);pickupLabel.element.textContent=`Sunlight pickup\n${A.fmtMET(J.pickup.met)} · ${J.pickup.alt.toFixed(1)} km`;}
   }
   function buildTrajectory(){clear(trajGroup);clear(gtGroup);clear(eventGroup);
     const p=label(M.pad_name);p.position.copy(pad.position);eventGroup.add(p);
-    for(const [key,tr] of Object.entries(T)){const seg=data.tracks[key];trajGroup.add(line(tr.pts(1),{color:seg.color,width:1.8,dashed:!!seg.dashed}));if(M.flight_segments.includes(key))gtGroup.add(line(tr.pts(1,0,tr.n-1,true),{color:C.ink,width:1,opacity:.26,dashed:true}));}
+    for(const [key,tr] of Object.entries(T)){const seg=data.tracks[key];trajGroup.add(line(tr.pts(1),{color:seg.color,width:1.8,dashed:!!seg.dashed}));if(M.flight_segments.includes(key))gtGroup.add(line(tr.pts(1,0,tr.n-1,true),{color:C.ink,width:1,opacity:.26}));}
     for(const e of data.events){if(!e.major || e.met===0)continue;const tr=e.track?T[e.track]:null,s=tr?tr.sample(e.met):shipAt(e.met);const p=drawPoint(s),dot=sprite(squareTex,.016);dot.position.set(...p);eventGroup.add(dot);const o=label(`${e.label}\n${A.fmtMET(e.met)}`,'small');o.position.set(...p);eventGroup.add(o);}
     buildJellyLayer();
   }
@@ -174,7 +172,7 @@ async function start() {
   $('link').onclick=()=>{const url=shareURL();history.replaceState(null,'',url);copyText(url,$('link'));};$('copytle').onclick=()=>copyText($('tle').textContent,$('copytle'));
   $('events').onclick=(e)=>{const row=e.target.closest('[data-met]');if(row){setPlaying(false);setMet(+row.dataset.met);}};
   $('legend').innerHTML=`<div>${M.flight_segments.map((k)=>`<span><i style="border-color:${data.tracks[k].color}"></i>${esc(data.tracks[k].label)}</span>`).join('')}<span><i style="border-color:${C.sun};border-top-width:3px"></i>Sunlit ascent</span></div><div><span><i class="d" style="border-color:${C.footprint}"></i>15° circle</span><span><i style="border-color:${C.sun}"></i>Sun 0°</span><span><i style="border-color:${C.accent}"></i>Sun −12°</span></div>`;
-  $('about').innerHTML='<p>Conditional model, not an observed trajectory.</p><p>WGS84 geometry · JPL DE440s sunlight.</p><p><a href="https://github.com/exoplanet5/CZ-6A#scientific-limitations" target="_blank" rel="noopener noreferrer">Model notes & sources ↗</a></p>';
+  $('about').innerHTML='<p>Reconstruction fitted to ground reports and the first catalog orbit; not telemetry.</p><p>WGS84 geometry · JPL DE440s sunlight.</p><p><a href="https://github.com/exoplanet5/CZ-6A#scientific-limitations" target="_blank" rel="noopener noreferrer">Model notes & sources ↗</a></p>';
   const narrow=matchMedia('(max-width:860px)');let panels={ctl:!narrow.matches,info:!narrow.matches};
   try{const saved=JSON.parse(localStorage.getItem('cz6a-panels'));if(saved&&!narrow.matches)panels={ctl:!!saved.ctl,info:!!saved.info};}catch{}
   function applyPanels(){document.body.classList.toggle('ctl-open',panels.ctl);document.body.classList.toggle('info-open',panels.info);document.querySelectorAll('[data-panel]').forEach((b)=>{b.classList.toggle('on',panels[b.dataset.panel]);b.setAttribute('aria-expanded',String(panels[b.dataset.panel]));});}
@@ -239,5 +237,5 @@ async function start() {
   requestAnimationFrame((t)=>{frame(t);$('loading').remove();});
   const want=qs.get('sky'),city=CITIES.find((c)=>c[0].toLowerCase()===want?.toLowerCase()),ll=(want||'').split(',').map(Number);
   if(city)openSky({name:city[0],lon:city[1],lat:city[2]});else if(ll.length===2&&ll.every(Number.isFinite)&&Math.abs(ll[0])<=90&&Math.abs(ll[1])<=180)openSky({lat:ll[0],lon:ll[1],custom:true});
-  window.__cz6a={state,setMet,setT0,setPlaying,flyTo,camera,view:()=>cam.get(),setView:(view)=>cam.set(view),pick:(x,y)=>cam.groundAt(x,y),trackAt,observerMarker:siteMark,shareURL,sky,shipAt,jelly:()=>J,footprint:()=>fp,boundaryCoverage:boundaryData.coverage,earth:earthMat,mapLOD:mapTiles,boundaries:boundaryLayer,meta:M,groups:{trajGroup,jellyGroup,termGroup,cityGroup,gridGroup,zoneGroup},profile:profile.id,mission:entry.id};
+  window.__cz6a={state,setMet,setT0,setPlaying,flyTo,camera,view:()=>cam.get(),setView:(view)=>cam.set(view),pick:(x,y)=>cam.groundAt(x,y),trackAt,observerMarker:siteMark,shareURL,sky,shipAt,jelly:()=>J,footprint:()=>fp,boundaryCoverage:boundaryData.coverage,earth:earthMat,mapLOD:mapTiles,boundaries:boundaryLayer,meta:M,groups:{trajGroup,gtGroup,jellyGroup,termGroup,cityGroup,gridGroup,zoneGroup},profile:profile.id,mission:entry.id};
 }
