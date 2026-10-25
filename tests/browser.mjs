@@ -42,9 +42,11 @@ try{
   await call('Emulation.setDeviceMetricsOverride',{width:1440,height:1000,deviceScaleFactor:1,mobile:false});
   await navigate(base);
   check('default 142-degree profile',await evaluate('__cz6a.profile==="retrograde-142" && Math.abs(__cz6a.meta.inc-142)<.05'));
+  check('10-degree circle radius matches the footprint at the vehicle altitude',await evaluate('(()=>{const g=__cz6a.footprint(),s=__cz6a.shipAt(__cz6a.state.met),a=g.geometry.attributes.instanceStart,w=g.localToWorld(new g.position.constructor(a.getX(0),a.getY(0),a.getZ(0))).normalize(),lam=Math.acos(w.x*s.u[0]+w.y*s.u[1]+w.z*s.u[2])*180/Math.PI,e=10*Math.PI/180,R=6378.137,want=(Math.acos(R*Math.cos(e)/(R+s.alt))-e)*180/Math.PI;return Math.abs(lam-want)<.04})()'));
+  check('circle labels read 10 degrees',await evaluate('document.querySelector("label:has(#o-fp)").textContent.trim()==="10° circle" && document.getElementById("legend").textContent.includes("10° circle") && !document.body.textContent.includes("15° circle")'));
   check('nominal sunlight pickup',await evaluate('Math.abs(__cz6a.jelly().pickup.met-101.000755)<.1'));
   check('visibility envelope and Twilight jellyfish panel removed',await evaluate('!__cz6a.groups.visGroup && !document.getElementById("jelly") && !document.body.innerText.includes("Twilight jellyfish") && !document.getElementById("legend").textContent.includes("envelope")'));
-  check('15-degree circle is green and enabled by default',await evaluate('__cz6a.state.show.fp && document.getElementById("o-fp").checked && __cz6a.footprint().visible && __cz6a.footprint().material.color.getHexString()==="199e70"'));
+  check('10-degree circle is green and enabled by default',await evaluate('__cz6a.state.show.fp && document.getElementById("o-fp").checked && __cz6a.footprint().visible && __cz6a.footprint().material.color.getHexString()==="199e70"'));
   check('circle legend matches its green dashed style',await evaluate('(()=>{const s=getComputedStyle(document.querySelector("#legend>div:nth-child(2) span:first-child i"));return s.borderTopColor==="rgb(25, 158, 112)" && s.borderTopStyle==="dashed";})()'));
   check('two solid solar contours',await evaluate('__cz6a.groups.termGroup.children.every(x=>!x.material.dashed) && __cz6a.groups.termGroup.children[0].material.color.getHexString()==="ffd54f" && __cz6a.groups.termGroup.children[1].material.color.getHexString()==="4fc3f7"'));
   check('no Zhuque-specific user-facing text',await evaluate('!(/ZQ-2|TQ-12|SECO-1|circularisation|34′/.test(document.body.innerText))'));
@@ -100,12 +102,12 @@ try{
 
   await evaluate('document.getElementById("o-jelly").click()');await delay(200);
   check('no dashed shadow-height line and solid ground track',await evaluate('__cz6a.groups.jellyGroup.children.every(x=>!x.material.dashed) && __cz6a.groups.gtGroup.children.length>0 && __cz6a.groups.gtGroup.children.every(x=>!x.material.dashed)'));
-  check('jelly toggle does not hide ascent or 15-degree circle',await evaluate('!__cz6a.groups.jellyGroup.visible && __cz6a.groups.trajGroup.visible && __cz6a.groups.trajGroup.children.length>=2 && __cz6a.footprint().visible'));
+  check('jelly toggle does not hide ascent or 10-degree circle',await evaluate('!__cz6a.groups.jellyGroup.visible && __cz6a.groups.trajGroup.visible && __cz6a.groups.trajGroup.children.length>=2 && __cz6a.footprint().visible'));
   await evaluate('__cz6a.setT0(39600)');
   check('T0 changes illumination',await evaluate('!__cz6a.jelly().pickup || Math.abs(__cz6a.jelly().pickup.met-101)>1'));
   await evaluate('__cz6a.setT0(36900);document.getElementById("o-jelly").click()');
   await evaluate('document.getElementById("o-fp").click()');await wait('!__cz6a.footprint().visible');
-  check('15-degree circle can still be switched off',await evaluate('!__cz6a.state.show.fp && !__cz6a.footprint().visible'));
+  check('10-degree circle can still be switched off',await evaluate('!__cz6a.state.show.fp && !__cz6a.footprint().visible'));
   await evaluate('document.getElementById("o-fp").click()');await wait('__cz6a.footprint().visible');
   await evaluate('__cz6a.setMet(100);__cz6a.setPlaying(true)');await delay(400);await evaluate('__cz6a.setPlaying(false)');
   check('playback advances MET',await evaluate('__cz6a.state.met>100'));

@@ -6,6 +6,7 @@ import {validateManifest,validateMission,selectProfile,createFlight,solarEphemer
 import {calculateVisibility,contour} from '../tools/visibility.js';
 const load=(name)=>JSON.parse(fs.readFileSync(new URL('../docs/data/'+name,import.meta.url)));
 const data=load('yaogan50-03.json'),index=load('profiles.json'),T0=Date.parse(data.tle_ref.t0),flight=createFlight(data),sun=solarEphemeris(data.sun);
+const LEVEL=data.meta.visibility.levels[0];
 const near=(a,b,tol=1e-7)=>assert.ok(Math.abs(a-b)<tol,`${a} vs ${b}`);
 
 test('manifest has explicit default independent of profile order',()=>{
@@ -53,23 +54,32 @@ test('time shift changes illumination but never the physical track',()=>{
   const a=computeJelly(flight.tracks.ascent,sun,T0-120000),b=computeJelly(flight.tracks.ascent,sun,T0+120000);
   assert.notEqual(a.pickup?.met,b.pickup?.met);assert.deepEqual(flight.shipAt(150).p,before);
 });
+test('visibility circle uses the 10-degree minimum elevation',()=>{
+  assert.equal(A.MIN_ELEVATION_DEG,10);
+  const h=300,lam=A.footprintDeg(h,A.MIN_ELEVATION_DEG)*A.D2R,r=A.RE+h;
+  const edge=Math.atan2(r*Math.cos(lam)-A.RE,r*Math.sin(lam))*A.R2D;
+  near(edge,10,1e-9);assert.ok(A.footprintDeg(h,10)>A.footprintDeg(h,15));
+});
 test('geometric sunlight has correct dayside and nightside signs',()=>{
   assert.ok(sunlightClearance([A.RE+100,0,0],[1.5e8,0,0])>0);
   assert.ok(sunlightClearance([-A.RE-100,0,0],[1.5e8,0,0])<0);
 });
+test('archived visibility threshold matches the viewer minimum elevation',()=>{
+  assert.deepEqual(data.meta.visibility.levels,[A.MIN_ELEVATION_DEG]);
+});
 test('nominal visibility excludes day observers at insertion and meets the threshold',()=>{
-  const r=calculateVisibility(data,T0);assert.ok(r.nonempty>0);assert.ok(r.area[15]>0);
+  const r=calculateVisibility(data,T0);assert.ok(r.nonempty>0);assert.ok(r.area[LEVEL]>0);
   let checked=0;
-  for(let i=0;i<r.mel.length;i++)if(r.mel[i]>=15){assert.ok(r.darkAtInsertion[i]>=0);checked++;}
+  for(let i=0;i<r.mel.length;i++)if(r.mel[i]>=LEVEL){assert.ok(r.darkAtInsertion[i]>=0);checked++;}
   assert.equal(checked,r.nonempty);
-  const segs=contour(Float32Array.from(r.mel,(v,i)=>Math.min(v-15,r.darkAtInsertion[i])),r.nx,r.ny,r.lon0,r.lat0,r.dx,r.dy,0);
+  const segs=contour(Float32Array.from(r.mel,(v,i)=>Math.min(v-LEVEL,r.darkAtInsertion[i])),r.nx,r.ny,r.lon0,r.lat0,r.dx,r.dy,0);
   assert.ok(segs.length>0);assert.ok(segs.flat().every(Number.isFinite));
 });
 test('visibility requires vehicle sunlight and observer darkness at the same time',()=>{
-  const d=structuredClone(data);d.meta.visibility={extent:[95,105,27,38],grid_step_deg:1,time_step_s:5,levels:[15]};
+  const d=structuredClone(data);d.meta.visibility={extent:[95,105,27,38],grid_step_deg:1,time_step_s:5,levels:[LEVEL]};
   const r=calculateVisibility(d,T0),count=Math.ceil(data.meta.insertion_met/5);
-  for(let j=0;j<r.ny;j++)for(let i=0;i<r.nx;i++){const k=j*r.nx+i;if(r.mel[k]<15)continue;const fr=A.siteFrame(r.lon0+i*r.dx,r.lat0+j*r.dy);let witness=false;
-    for(let n=0;n<=count;n++){const t=data.meta.insertion_met*n/count,p=flight.shipAt(t).p,s=sun(T0+t*1000);if(sunlightClearance(p,s)>0 && A.lookAngles(fr,s).el<=0 && A.lookAngles(fr,p).el>=15){witness=true;break;}}
+  for(let j=0;j<r.ny;j++)for(let i=0;i<r.nx;i++){const k=j*r.nx+i;if(r.mel[k]<LEVEL)continue;const fr=A.siteFrame(r.lon0+i*r.dx,r.lat0+j*r.dy);let witness=false;
+    for(let n=0;n<=count;n++){const t=data.meta.insertion_met*n/count,p=flight.shipAt(t).p,s=sun(T0+t*1000);if(sunlightClearance(p,s)>0 && A.lookAngles(fr,s).el<=0 && A.lookAngles(fr,p).el>=LEVEL){witness=true;break;}}
     assert.ok(witness,'Every visible cell must have a simultaneous witness');
   }
 });

@@ -9,11 +9,11 @@ Interactive Earth-fixed launch trajectories, twilight illumination and observer 
 No build or package installation is needed. All JavaScript, textures and catalog data are local.
 
 ```sh
-python3 -m http.server 8766 --bind 127.0.0.1 --directory docs
+python3 tools/serve.py
 # Open http://127.0.0.1:8766/
 ```
 
-Use an HTTP server, not a `file://` URL: the viewer loads ES modules, JSON and local assets.
+Use an HTTP server, not a `file://` URL: the viewer loads ES modules, JSON and local assets. `tools/serve.py` is the standard-library server with `Cache-Control: no-cache`. The plain `python3 -m http.server` lets browsers reuse an old cached module beside an edited one; a missing new export then shows as `undefined`. If a page was opened from such a server, hard-reload it once (Cmd/Ctrl+Shift+R).
 
 - Select a **profile**, then a **mission configuration**. Defaults are explicit; adding a profile never silently changes the landing mission.
 - Change **T0** to recompute Sun geometry, sunlight pickup and the synthetic TLE orientation. The supplied Earth-fixed track stays unchanged.
@@ -23,7 +23,7 @@ Use an HTTP server, not a `file://` URL: the viewer loads ES modules, JSON and l
 - **Click anywhere on the globe** (or tap on a phone), click a city label, or open **Observer sky chart** and enter coordinates. A cyan ring marks the selected observer site while the chart is open. Clicks on the trajectory seek instead, and drags, tilts and pinches never open a chart. It shows ascent and orbital passes, Sun/Moon, stars, and optional constellation/Milky Way layers.
 - Toggle the sunlit-plume illustration, NOTAM polygons, ground tracks, city lights and solar contours. Turning off the plume does not hide the ascent.
 - **Borders & regions** is enabled by default: country borders worldwide, with province/region lines **only in China**. Other countries have no internal state/province/region lines. Country borders are stronger than regional lines; remaining source-classified disputed/control lines are dashed. The selected land-boundary worldview is **China claims**, including the sourced southern Tibet claim; the footer identifies that view. The checkbox or `?borders=0` hides both administrative levels. These are generalized cartographic reference lines, not authoritative sovereignty boundaries.
-- The **green 15° circle** is enabled by default and follows the vehicle's current position and altitude. Its checkbox or `?fp=0` can turn it off. The ascent visibility envelope and Twilight jellyfish information panel are no longer displayed or computed by the viewer.
+- The **green 10° circle** is enabled by default and follows the vehicle's current position and altitude. Its checkbox or `?fp=0` can turn it off. The ascent visibility envelope and Twilight jellyfish information panel are no longer displayed or computed by the viewer.
 - **Copy link** restores profile, mission, T0, numeric MET (including negative times), the camera view point, heading, tilt and range (`cam=lon,lat,dist,heading,tilt`), speed, layer toggles and an open observer site. Height is fixed at true scale (×1). Panel visibility is a per-browser convenience; blocked storage is tolerated.
 - Live clock operates only within the modeled time span; it does not extrapolate a flight outside the data.
 
@@ -79,9 +79,9 @@ The exporter resamples the existing solution; it does not fit or integrate a new
 
 - Sun vectors come from **JPL DE440s**, geometric Earth-to-Sun positions in ITRS/ECEF, at 30-second cadence. Linear interpolation covers all allowed T0/MET combinations, including the prelaunch interval; no extrapolation is allowed.
 - Sunlight requires the vehicle-to-Sun-centre segment to miss the WGS84 ellipsoid. There is **no 34′ refraction adjustment**. The first pickup agrees with the source calculation to within 0.001 s; this is an export consistency check, not predictive timing accuracy.
-- The instantaneous **15° circle** is a spherical minimum-elevation footprint, drawn dashed green (`#199e70`). It has no observer-night mask and is not an accumulated ascent envelope. The globe's **solid yellow Sun 0°** and **solid cyan Sun −12°** contours move with playback UTC.
-- The source-model visibility-analysis helper is kept outside the published site in `tools/visibility.js` for validation; the viewer does not compute or draw an envelope. The archived method unions sunlit-ascent samples with vehicle elevation ≥15° and observer Sun ≤0° at the same time, with an additional insertion-time darkness mask.
-- Sky-chart pass badges count sampled time with a sunlit vehicle, elevation ≥15°, and observer Sun ≤0°. They include ascent and orbital passes and are independent of the instantaneous circle. AOS/LOS are drawn at a 1° elevation threshold.
+- The instantaneous **10° circle** is a spherical minimum-elevation footprint (`MIN_ELEVATION_DEG` in `docs/js/astro.js`), drawn dashed green (`#199e70`). It has no observer-night mask and is not an accumulated ascent envelope. The globe's **solid yellow Sun 0°** and **solid cyan Sun −12°** contours move with playback UTC.
+- The source-model visibility-analysis helper is kept outside the published site in `tools/visibility.js` for validation; the viewer does not compute or draw an envelope. The archived method unions sunlit-ascent samples with vehicle elevation ≥10° and observer Sun ≤0° at the same time, with an additional insertion-time darkness mask. Its threshold comes from the mission's `visibility.levels` (10°, over 75–124°E × 17–53°N), matching the viewer's `MIN_ELEVATION_DEG` and the source project's regional map; a unit test keeps the two in step.
+- Sky-chart pass badges count sampled time with a sunlit vehicle, elevation ≥10° (the same `MIN_ELEVATION_DEG`), and observer Sun ≤0°. They include ascent and orbital passes and are independent of the instantaneous circle. AOS/LOS are drawn at a 1° elevation threshold.
 - Glow is an illustration, not a prediction of plume size, persistence, brightness or detectability. No terrain, weather, extinction, refraction or finite-disc emergence is modeled.
 - Physics and look angles use WGS84 km; the textured globe is spherical for drawing, with heights at true scale. Moon and star rendering use approximate astronomy.
 
@@ -93,6 +93,7 @@ The exporter resamples the existing solution; it does not fit or integrate a new
 - `docs/data/profiles.json`: profile/mission manifest, with explicit defaults.
 - `docs/data/boundaries{,-medium,-fine}.json`: three consistent detail levels for worldwide country borders and China-only regional lines. `boundaries.js` validates and tessellates independent lines; `boundary-layer.js` renders screen-space vectors with zoom-dependent detail.
 - `docs/js/map-lod.js`, `map-tiles.js`: screen-space tile selection, native-detail cap, bounded request/cache management and patch rendering. `docs/tex/tiles/manifest.json` records every tile hash and the source image hash; image attribution is in `docs/tex/TILES-LICENSE.txt`.
+- `tools/serve.py`: local no-cache preview server.
 - `tools/visibility.js`: archived source-model visibility analysis, used by the unit tests only and not published.
 - `tools/export_map_tiles.py`: reproducible local JPEG pyramid generation from the shared 21600 × 10800 Blue Marble source.
 - `tools/export_boundaries.py`: pinned, reproducible boundary-data simplification; see `docs/data/BOUNDARIES-LICENSE.txt` for source URLs, licenses and rebuild commands.

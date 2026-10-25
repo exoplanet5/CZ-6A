@@ -115,7 +115,7 @@ export function createSkyChart({ shipAt, metEnd, styleAt, seco, vehicle, getStat
     let sec = 0;
     for (let i = 1; i < q.pts.length; i++) {
       const p = q.pts[i], utc = t0ms + p.met * 1000;
-      if (p.el < 15) continue;
+      if (p.el < A.MIN_ELEVATION_DEG) continue;
       if (styleAt(p.met, t0ms).lit && solarLook(utc).alt <= 0) sec += p.met - q.pts[i - 1].met;
     }
     return sec;

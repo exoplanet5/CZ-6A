@@ -56,14 +56,14 @@
     "visibility": {
       "extent": [
         75,
-        118,
-        20,
-        45
+        124,
+        17,
+        53
       ],
       "grid_step_deg": 0.2,
       "time_step_s": 2,
       "levels": [
-        15
+        10
       ]
     },
     "notes": [
@@ -77,7 +77,7 @@
       "The upper-stage and orbit dynamics include central gravity and J2. Higher harmonics, post-insertion maneuvers, fragmentation and debris descent are not modeled.",
       "Altitude samples are WGS84 geodetic ellipsoidal heights in km. Perigee and apogee are orbital radii minus the WGS84 equatorial radius; these are not the same altitude convention.",
       "Sunlight uses the geometric Sun centre from the shared DE440s ephemeris and WGS84 ellipsoidal Earth occultation. The solar table is linearly interpolated in ECEF at 30-second cadence.",
-      "The 15° visibility envelope is sampled during sunlit ascent for sea-level observers with Sun-centre altitude ≤0°, then clipped to the observer night side at the insertion reference epoch. Post-insertion orbit tracks do not enlarge the ascent envelope.",
+      "The 10° visibility envelope is sampled during sunlit ascent for sea-level observers with Sun-centre altitude ≤0°, then clipped to the observer night side at the insertion reference epoch. Post-insertion orbit tracks do not enlarge the ascent envelope.",
       "No brightness, atmospheric refraction or extinction, weather, terrain, finite solar-disc emergence, or plume size is modeled. Geometric visibility is not a claim of naked-eye detection.",
       "The 1.5 revolutions shown are exactly 1.5 times the insertion Keplerian period in elapsed time, not a claim of an exact J2 ground-track repeat or true-anomaly recurrence.",
       "The model TLE keeps the label PRELAUNCH MODEL - NOT OBSERVED and placeholder catalog number 00000. It is fitted to the reconstructed numerical orbit and is not the catalog element set; some TLE consumers reject this placeholder."

@@ -37,10 +37,10 @@
       ["West China", 99, 33, 2.1]
     ],
     "visibility": {
-      "extent": [75, 118, 20, 45],
+      "extent": [75, 124, 17, 53],
       "grid_step_deg": 0.2,
       "time_step_s": 2,
-      "levels": [15]
+      "levels": [10]
     },
     "notes": [
       "Reconstruction (revision 2, 2026-10-24), not telemetry or a unique solution. Liftoff was announced at 18:15 Beijing time (10:15 UTC); seconds-level T0 is not known.",
@@ -53,7 +53,7 @@
       "The upper-stage and orbit dynamics include central gravity and J2. Higher harmonics, post-insertion maneuvers, fragmentation and debris descent are not modeled.",
       "Altitude samples are WGS84 geodetic ellipsoidal heights in km. Perigee and apogee are orbital radii minus the WGS84 equatorial radius; these are not the same altitude convention.",
       "Sunlight uses the geometric Sun centre from the shared DE440s ephemeris and WGS84 ellipsoidal Earth occultation. The solar table is linearly interpolated in ECEF at 30-second cadence.",
-      "The 15° visibility envelope is sampled during sunlit ascent for sea-level observers with Sun-centre altitude ≤0°, then clipped to the observer night side at the insertion reference epoch. Post-insertion orbit tracks do not enlarge the ascent envelope.",
+      "The 10° visibility envelope is sampled during sunlit ascent for sea-level observers with Sun-centre altitude ≤0°, then clipped to the observer night side at the insertion reference epoch. Post-insertion orbit tracks do not enlarge the ascent envelope.",
       "No brightness, atmospheric refraction or extinction, weather, terrain, finite solar-disc emergence, or plume size is modeled. Geometric visibility is not a claim of naked-eye detection.",
       "The 1.5 revolutions shown are exactly 1.5 times the insertion Keplerian period in elapsed time, not a claim of an exact J2 ground-track repeat or true-anomaly recurrence.",
       "The model TLE keeps the label PRELAUNCH MODEL - NOT OBSERVED and placeholder catalog number 00000. It is fitted to the reconstructed numerical orbit and is not the catalog element set; some TLE consumers reject this placeholder."
@@ -78,9 +78,9 @@
     },
     "reference_products": [
       {"file": "Yaogan-50_03_solution.json", "sha256": "8af0ea328daa0bfe585a9cc046b0b0a9bbbd2d4028b707367dc23ec68cc39eed"},
-      {"file": "README.md", "sha256": "1f55096ed7bfde4441756758ec0a05090e5067c3da158a50b98914472f01c332"},
-      {"file": "ascent_visibility.py", "sha256": "20c9f13bb7d25f9180c54a7aa64890c16207f1ed19982952762ac92a9055733c"},
-      {"file": "ascent_visibility.json", "sha256": "461372d1627883bcafad2307e8c1ee6e1048a088fc07e7bb7185cf0d5fc9394e"}
+      {"file": "README.md", "sha256": "03c3aa79087d83b07409bbe7d8d10f37002dc41b657b333817671fbe1712bb3e"},
+      {"file": "ascent_visibility.py", "sha256": "d0f5896f992521d97ae6a124711d379520541df288d9e42d831e1376690d9c68"},
+      {"file": "ascent_visibility.json", "sha256": "6eef8cda6406a7a0933d45ef8a12934ad62b3751e8c1c9657cf8f85b9c9d805b"}
     ],
     "reference_products_required_to_export": false,
     "privacy": "Only selected model parameters and basename/hash provenance are retained; no absolute source paths or raw Space-Track records are included."
