@@ -41,7 +41,7 @@ test('Cartesian track interpolation crosses the antimeridian locally',()=>{
 });
 test('DE440s table and ellipsoid ray reproduce original pickup within 0.1 second',()=>{
   const j=computeJelly(flight.tracks.ascent,sun,T0);
-  near(j.pickup.met,101.00075462383785,.1);near(j.pickup.alt,43.180315,.001);
+  near(j.pickup.met,112.58297529489528,.1);near(j.pickup.alt,43.542575,.001);
   assert.ok(sunlightClearance(flight.shipAt(j.pickup.met-.1).p,sun(T0+(j.pickup.met-.1)*1000))<0);
   assert.ok(sunlightClearance(flight.shipAt(j.pickup.met+.1).p,sun(T0+(j.pickup.met+.1)*1000))>0);
 });

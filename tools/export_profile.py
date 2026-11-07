@@ -241,9 +241,13 @@ def make_mission(record, paths):
     meta = copy.deepcopy(record["meta"])
     insertion = meta["insertion_met"]
     end = insertion + meta["orbit_revolutions"] * meta["period_s"]
+    powered = meta.get("powered_intervals", [[0, insertion]])
+    require(all(0 <= a < b <= insertion for a, b in powered) and powered[0][0] == 0 and powered[-1][1] == insertion
+            and all(powered[i][1] < powered[i + 1][0] for i in range(len(powered) - 1)),
+            "powered_intervals must be ordered, within the ascent and end at insertion")
     meta.update({
         "flight_segments": ["ascent", "orbit"],
-        "powered_intervals": [[0, insertion]],
+        "powered_intervals": powered,
         "phases": [
             {"until": 0, "label": "Pre-launch"},
             {"until": insertion, "label": "Ascent"},

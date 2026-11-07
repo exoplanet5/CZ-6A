@@ -53,13 +53,14 @@ Arunachal Pradesh is administered by India and claimed by China. This is an expl
 
 ## Current configuration
 
-| Quantity | Value (revision 2) |
+| Quantity | Value (revision 3) |
 |---|---:|
-| Insertion inclination | 141.9815° |
-| Osculating perigee × apogee | 695.4 × 952.9 km |
+| Insertion inclination | 141.9817° |
+| Osculating perigee × apogee | 695.3 × 952.9 km |
 | Insertion | T+773.38 s, about 10:27:53 UTC |
 | Cutoff state vs. catalog object 2026-240A | 3.4 km |
-| Sunlight pickup | T+101.0 s, 43.18 km WGS84 altitude |
+| Sunlight pickup | T+112.6 s, 43.54 km WGS84 altitude |
+| Flight sequence (typical CZ-6A) | boosters burn out T+114.5 s, separate T+117.5 s; fairing T+179 s; stage separation T+238.5 s; stage-2 ignition T+240 s |
 | Playback end | T+9897.8 s, about 12:59:58 UTC |
 | Orbit coverage after insertion | 1.5 × 6082.94 s |
 | Hazard polygon | A5283/26, booster drop zone |
@@ -69,9 +70,9 @@ Arunachal Pradesh is administered by India and claimed by China. This is an expl
 
 ### Scientific limitations
 
-Revision 2 (2026-10-24) replaces the kinematic lower ascent with a point-mass first-stage model. Its propulsion surrogate is calibrated on the triangulated December 2025 CZ-6A ascent. The model is fitted to two untimed ground reports. At N39.00 E110.12 the rocket crossed above the Moon at about 1.6 × its elevation; the model gives 1.58 ×. At N37.76 E110.93 the sunlit rising path looked nearly straight; the model gives a +1.3° great-circle offset. A ballistic booster range is also fitted to the NOTAM booster zone. The reports constrain **climb geometry, not timing**. The climb is much steeper than before, about 61 km altitude at 54 km ground range against 39 km, while altitude versus time changes little. The upper stage is fitted to the first catalog orbit of 2026-240A, assumed to be the payload; its identity is unconfirmed. This is not telemetry, and fit residuals are not confidence intervals.
+Revision 3 (2026-11-07) models the lower ascent as a point-mass CZ-6A built from published masses and thrusts (530 t at liftoff; four 58.3 t boosters at 1214 kN; two YF-100 at 1223.5 kN) and the typical CZ-6A flight sequence: booster burnout T+114.5 s, separation T+117.5 s, fairing jettison T+179 s, core cutoff and stage separation T+238.5 s, stage-2 ignition T+240 s (assumed). Drag and the pitch program are explicit. One effective thrust scale was calibrated on the triangulated December 2025 CZ-6A ascent (1.06) and fits this flight at 0.95. The pitch program is fitted to two untimed ground reports. At N39.00 E110.12 the rocket crossed above the Moon at about 1.6 × its elevation; the model gives 1.53 ×. At N37.76 E110.93 the sunlit rising path looked nearly straight; the model gives a −0.5° great-circle offset. A ballistic booster range is fitted to the NOTAM booster zone and falls 35 km short of its centroid. The reports constrain **climb geometry, not timing**: the climb reaches about 60 km altitude within 55 km of ground range, far steeper than the December polar flight, and is slower in time than revision 2 because the real booster burn lasts 114.5 s. From T+300 s the stage-2 path is the revision-2 solution, fitted to the first catalog orbit of 2026-240A (assumed to be the payload; its identity is unconfirmed) and kept to within 0.05 km. Keeping that path is what pulls the thrust scale below the calibration. This is not telemetry, and fit residuals are not confidence intervals.
 
-The dogleg is attributed to **stage 1**, and the NOTAM to **boosters**. The plane change is still carried by the stage-2 steering surrogate. Modeled booster burnout/separation (T+88/134 s) and stage-2 ignition (T+230 s) are model quantities and are not shown as timeline events; the rocket drawing uses them for its booster and stage-1 separation states. No debris trajectory or impact time is shown. Full assumptions and sensitivity refits are in the source project README.
+The dogleg is attributed to **stage 1**, and the NOTAM to **boosters**. The plane change is still carried by the stage-2 steering surrogate. The staging times are a typical published sequence rather than this flight's telemetry and are not shown as timeline events; the rocket drawing uses them for its booster, fairing and stage-1 states, and the plume is off during the 1.5 s between core cutoff and stage-2 ignition. No debris trajectory or impact time is shown. Full assumptions and sensitivity refits are in the source project README.
 
 The exporter resamples the existing solution; it does not fit or integrate a new launch. T0 shifts leave the Earth-fixed trajectory unchanged. The model TLE keeps its **PRELAUNCH MODEL — NOT OBSERVED** label and placeholder catalog number 00000; it is fitted to the reconstructed orbit, not the catalog element set. The page displays numerical samples rather than propagating that TLE.
 
@@ -144,4 +145,4 @@ The viewer is published at **https://exoplanet5.github.io/CZ-6A/**. GitHub Pages
 
 Illustration: Mickey. NASA Blue Marble Next Generation / Black Marble base textures. Administrative boundaries: [Natural Earth](https://www.naturalearthdata.com/), public domain; source revision and attribution are preserved in `docs/data/BOUNDARIES-LICENSE.txt` and `boundaries.json`. Three.js is vendored with its MIT license (`docs/vendor/three/LICENSE`). Star catalog and Milky Way data are from d3-celestial, BSD-3 (`docs/data/STARDATA-LICENSE.txt`). Sky-chart and viewer components are adapted from [ZhuQue](https://github.com/exoplanet5/ZhuQue) and [Starship IFT-14](https://github.com/exoplanet5/Starship-IFT14), with CZ-6A profile loading, geometric illumination, optional events/tracks and responsive controls added here. Code license: Apache-2.0, see `LICENSE`.
 
-The scientific source is the local `launch_traj_6A_reverse` reconstruction (revision 2), the supplied NOTAM A5283/26 issued 2026-10-17, user-supplied ground reports, and the first Space-Track elements of 2026-240A. The Yaogan-50 02 launch-time reference is [Next Spaceflight's March 15 flight record](https://nextspaceflight.com/launches/details/8186), also documented by [SciNews/CCTV](https://www.youtube.com/watch?v=L0gIO7TAA4g). Derived precursor orbit-family parameters inform the model; raw catalog downloads are not redistributed. This is an independent visualization, not official launch guidance or an official ephemeris.
+The scientific source is the local `launch_traj_6A_reverse` reconstruction (revision 3), the supplied NOTAM A5283/26 issued 2026-10-17, user-supplied ground reports, the triangulated December 2025 CZ-6A ascent used for calibration, the typical CZ-6A flight sequence and vehicle figures from public sources, and the first Space-Track elements of 2026-240A. The Yaogan-50 02 launch-time reference is [Next Spaceflight's March 15 flight record](https://nextspaceflight.com/launches/details/8186), also documented by [SciNews/CCTV](https://www.youtube.com/watch?v=L0gIO7TAA4g). Derived precursor orbit-family parameters inform the model; raw catalog downloads are not redistributed. This is an independent visualization, not official launch guidance or an official ephemeris.

@@ -17,10 +17,10 @@
     "source_samples": 3209,
     "source_interval_met_s": [
       0.0,
-      12939.25232
+      12939.737791
     ],
     "interpolation": "cubic Hermite in ECEF using transformed source velocities",
-    "source_frame_roundtrip_max_km": 7.149890256590936e-06
+    "source_frame_roundtrip_max_km": 7.149595905021076e-06
   },
   "tracks": {
     "ascent": {
@@ -28,14 +28,14 @@
       "met0": 0,
       "dt_s": 1.0004890038809833,
       "end_met_s": 773.378,
-      "wgs84_roundtrip_max_km": 3.105380073975539e-06
+      "wgs84_roundtrip_max_km": 3.105379619228188e-06
     },
     "orbit": {
       "samples": 1826,
       "met0": 773.378,
       "dt_s": 4.999674377964744,
       "end_met_s": 9897.783739785658,
-      "wgs84_roundtrip_max_km": 7.103949428710694e-06
+      "wgs84_roundtrip_max_km": 7.108773388608897e-06
     }
   },
   "orbit_duration_s": 9124.405739785658,
@@ -54,11 +54,11 @@
     }
   },
   "nominal_pickup": {
-    "reference_met_s": 101.00075462383785,
-    "ecef_linear_met_s": 101.00083888820492,
-    "geodetic_linear_met_s": 101.00083629065917,
-    "ecef_linear_error_s": 8.42643670750931e-05,
-    "geodetic_linear_error_s": 8.166682131616199e-05
+    "reference_met_s": 112.58297529489528,
+    "ecef_linear_met_s": 112.58121021980065,
+    "geodetic_linear_met_s": 112.58119043779384,
+    "ecef_linear_error_s": -0.0017650750946245353,
+    "geodetic_linear_error_s": -0.0017848571014411618
   },
   "dependencies": {
     "numpy": "2.4.2",
@@ -68,13 +68,13 @@
     "jplephem": "2.24"
   },
   "inputs_sha256": {
-    "metadata.json": "bc1f8f9448c577b15c989a887b3f9303c93b455755e45d74cc89fa450f3ad1b6",
-    "Yaogan-50_03_trajectory.csv": "d807325dc6a15736ea26a28ed8051282b9ec99f0cf3fc2ed9a67a8eee0e6f4de",
-    "Yaogan-50_03_prelaunch.tle": "a0497746a4ff8ef0ae671858f21f065f381e92da129f76a9a11489dbfab25014",
+    "metadata.json": "9c00ae68486e57e53bcf145c5055129d58c06e26c5664f1d30d7fae0beba7608",
+    "Yaogan-50_03_trajectory.csv": "a3998f4877296853ae1d565103928805be31a11079b9de6161bdd3550554dc59",
+    "Yaogan-50_03_prelaunch.tle": "a9285a5aa2b67b5ff4d8d015535527d65c7909481c571883b06f2d4258cb77d0",
     "Launch_NOTAM_20261023_CZ-6A.kml": "474bbb9dc100868186622b95feb2564104939ab0b1a270c87a3c5726632f1d12"
   },
   "outputs_sha256": {
-    "yaogan50-03.json": "d2e2c561efeef532635e003f194f9388619cb026f6de7bc3bd0aa54b0d1c7a43",
-    "profiles.json": "e065090593e7465bb27a89c533a4638ffc35f8e61af272a1bb4661d830511937"
+    "yaogan50-03.json": "1dada8d63427b2b08bc0cc3a97d31ed858a39ed8ef59768e64bc5547cd825349",
+    "profiles.json": "0f2e169c05e90d314ea374eaca4a0089b180d28f4f1ce790431ca68dc1fbce39"
   }
 }
