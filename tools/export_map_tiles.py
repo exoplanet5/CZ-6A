@@ -9,7 +9,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 # The 4096 × 2048 base globe covers coarser views, so the pyramid starts at 5400 pixels wide.
-MIN_LEVEL, MAX_LEVEL = 1, 3
+MIN_LEVEL, MAX_LEVEL = 2, 3   # the 4K and 8K base maps cover coarser views; the template manifest holds levels 2-3
 DEFAULT_SOURCE = Path.home() / 'sda/basemaps/world.topo.bathy.200409.3x21600x10800.jpg'
 Image.MAX_IMAGE_PIXELS = 250_000_000
 

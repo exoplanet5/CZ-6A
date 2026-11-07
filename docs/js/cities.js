@@ -116,6 +116,7 @@ export const CITIES=[...CHINA_CITIES,
   ['Kathmandu',85.30,27.70,1],
   ['New Delhi',77.20,28.60,1],
   ['Hanoi',105.80,21.00,1],
+  // A mission's own corridor cities belong in meta.extra_cities.
 ];
 
 export const CITY_DISTANCES={1:2.9,2:1.75,3:1.38};

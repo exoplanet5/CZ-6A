@@ -7,7 +7,7 @@ unchanged module can then be reused stale beside a freshly loaded one, which
 breaks imports of newly added exports. ``no-cache`` makes every load revalidate
 (unchanged files still return 304). Standard library only::
 
-    python3 tools/serve.py            # http://127.0.0.1:8766/
+    python3 tools/serve.py            # http://127.0.0.1:8770/
     python3 tools/serve.py --port 9000
 """
 import argparse
@@ -31,7 +31,7 @@ class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--port", type=int, default=8766)
+    parser.add_argument("--port", type=int, default=8770)
     parser.add_argument("--bind", default="127.0.0.1")
     args = parser.parse_args()
     handler = functools.partial(NoCacheHandler, directory=str(DOCS))

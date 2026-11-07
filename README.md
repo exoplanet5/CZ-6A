@@ -134,6 +134,10 @@ Set `CHROME` to another Chrome executable and `VIEWER_URL` to another local serv
 
 ## GitHub Pages
 
+## Page design
+
+Since 2026-11-07 the viewer is a build of the shared launch-page template (`~/launch/launch-page-template`, made with the `launch-page` skill's `new_page.py`) with this repository's mission JSON. That brought the star background, the Sun and an optional Moon, a light 4K opening map with the 8K maps and tiles following, a render loop that redraws only on change, and the performance checks in `check_page.py`. `docs/js` is template code: take changes from the template and rebuild `docs/` with `new_page.py` rather than editing here. The tile pyramid holds levels 2–3 only, and `tools/export_map_tiles.py` matches. This repository's own page checks are `node tests/browser.mjs` against `python3 tools/serve.py --port 8766`.
+
 The viewer is published at **https://exoplanet5.github.io/CZ-6A/**. GitHub Pages serves `main` → `/docs`, including `.nojekyll`. Future updates deploy when changes reach `main`.
 
 ## Credits and sources

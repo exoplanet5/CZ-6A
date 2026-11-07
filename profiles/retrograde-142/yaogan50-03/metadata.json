@@ -16,13 +16,21 @@
     "vehicle": "CZ-6A",
     "mission": "Yaogan-50 03",
     "date": "2026-10-23",
-    "pad": [111.589299, 38.863011],
+    "pad": [
+      111.589299,
+      38.863011
+    ],
     "pad_alt": 1.5,
     "pad_name": "Taiyuan LC-9A",
     "t0_default": "10:15:00",
     "t0_min": "09:30:00",
     "t0_max": "11:00:00",
-    "t0_presets": [{"label": "Nominal 10:15", "time": "10:15:00"}],
+    "t0_presets": [
+      {
+        "label": "Nominal 10:15",
+        "time": "10:15:00"
+      }
+    ],
     "insertion_met": 773.378,
     "period_s": 6082.937159857105,
     "orbit_revolutions": 1.5,
@@ -31,16 +39,43 @@
     "apogee_km": 952.85301963038,
     "az": 255.135827734821,
     "views": [
-      ["Global", 100, 12, 3.6],
-      ["Taiyuan", 111.589299, 37.36, 1.22],
-      ["Launch corridor", 99, 34, 2.15],
-      ["West China", 99, 33, 2.1]
+      [
+        "Global",
+        100,
+        12,
+        3.6
+      ],
+      [
+        "Taiyuan",
+        111.589299,
+        37.36,
+        1.22
+      ],
+      [
+        "Launch corridor",
+        99,
+        34,
+        2.15
+      ],
+      [
+        "West China",
+        99,
+        33,
+        2.1
+      ]
     ],
     "visibility": {
-      "extent": [75, 124, 17, 53],
+      "extent": [
+        75,
+        124,
+        17,
+        53
+      ],
       "grid_step_deg": 0.2,
       "time_step_s": 2,
-      "levels": [10]
+      "levels": [
+        10
+      ]
     },
     "notes": [
       "Reconstruction (revision 2, 2026-10-24), not telemetry or a unique solution. Liftoff was announced at 18:15 Beijing time (10:15 UTC); seconds-level T0 is not known.",
@@ -57,13 +92,20 @@
       "No brightness, atmospheric refraction or extinction, weather, terrain, finite solar-disc emergence, or plume size is modeled. Geometric visibility is not a claim of naked-eye detection.",
       "The 1.5 revolutions shown are exactly 1.5 times the insertion Keplerian period in elapsed time, not a claim of an exact J2 ground-track repeat or true-anomaly recurrence.",
       "The model TLE keeps the label PRELAUNCH MODEL - NOT OBSERVED and placeholder catalog number 00000. It is fitted to the reconstructed numerical orbit and is not the catalog element set; some TLE consumers reject this placeholder."
-    ]
+    ],
+    "model_badge": "Provisional model",
+    "about": [
+      "Reconstruction fitted to ground reports and the first catalog orbit; not telemetry.",
+      "WGS84 geometry · JPL DE440s sunlight."
+    ],
+    "readme_url": "https://github.com/exoplanet5/CZ-6A#scientific-limitations",
+    "observer_home": "Chengdu"
   },
   "source": {
     "status": "CONDITIONAL RECONSTRUCTION — CONSTRAINED BY GROUND REPORTS AND THE FIRST CATALOG ORBIT; NOT TELEMETRY OR A UNIQUE SOLUTION",
     "nominal_launch_utc": "2026-10-23T10:15:00Z",
     "frame": "TEME-like equator/equinox of date; GMST rotation with UTC used as UT1; not J2000",
-    "earth_rotation_rad_s": 0.000072921158553,
+    "earth_rotation_rad_s": 7.2921158553e-05,
     "raan_rate_deg_per_min": 0.2506844773374723,
     "nominal_pickup_met_s": 101.00075462383785,
     "files": {
@@ -77,10 +119,22 @@
       "Launch_NOTAM_20261023_CZ-6A.kml": "474bbb9dc100868186622b95feb2564104939ab0b1a270c87a3c5726632f1d12"
     },
     "reference_products": [
-      {"file": "Yaogan-50_03_solution.json", "sha256": "8af0ea328daa0bfe585a9cc046b0b0a9bbbd2d4028b707367dc23ec68cc39eed"},
-      {"file": "README.md", "sha256": "03c3aa79087d83b07409bbe7d8d10f37002dc41b657b333817671fbe1712bb3e"},
-      {"file": "ascent_visibility.py", "sha256": "d0f5896f992521d97ae6a124711d379520541df288d9e42d831e1376690d9c68"},
-      {"file": "ascent_visibility.json", "sha256": "6eef8cda6406a7a0933d45ef8a12934ad62b3751e8c1c9657cf8f85b9c9d805b"}
+      {
+        "file": "Yaogan-50_03_solution.json",
+        "sha256": "8af0ea328daa0bfe585a9cc046b0b0a9bbbd2d4028b707367dc23ec68cc39eed"
+      },
+      {
+        "file": "README.md",
+        "sha256": "03c3aa79087d83b07409bbe7d8d10f37002dc41b657b333817671fbe1712bb3e"
+      },
+      {
+        "file": "ascent_visibility.py",
+        "sha256": "d0f5896f992521d97ae6a124711d379520541df288d9e42d831e1376690d9c68"
+      },
+      {
+        "file": "ascent_visibility.json",
+        "sha256": "6eef8cda6406a7a0933d45ef8a12934ad62b3751e8c1c9657cf8f85b9c9d805b"
+      }
     ],
     "reference_products_required_to_export": false,
     "privacy": "Only selected model parameters and basename/hash provenance are retained; no absolute source paths or raw Space-Track records are included."
@@ -92,7 +146,10 @@
     "color": "#eeeeee",
     "t0": "1007",
     "t1": "1028",
-    "centroid": [107.7416665, 37.9916665],
+    "centroid": [
+      107.7416665,
+      37.9916665
+    ],
     "dist_km": 349.59,
     "bearing": 255.135827734821,
     "desc": "Booster drop zone; fitted only as a ballistic booster range, no impact time or dispersion modeled"
