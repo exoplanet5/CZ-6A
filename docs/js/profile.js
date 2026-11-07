@@ -85,6 +85,7 @@ export function validateMission(data) {
   require(Array.isArray(data.events) && data.events.every((e) => finite(e.met) && e.met >= 0 && e.met <= end+1e-5 && typeof e.label === 'string' && (!e.track || !!data.tracks[e.track])), 'Invalid events');
   require(Array.isArray(data.zones), 'Invalid zones');
   for (const z of data.zones) {
+    if (z.label !== undefined) require(typeof z.label === 'string' && z.label.length <= 40, 'Invalid zone label');
     require(typeof z.id === 'string' && typeof z.role === 'string' && /^#[0-9a-f]{6}$/i.test(z.color), 'Invalid zone style');
     require(Array.isArray(z.ring) && z.ring.length >= 4 && z.ring.every((p) => p.length === 2 && p.every(finite) && Math.abs(p[1]) <= 90), 'Invalid hazard polygon');
     require(Array.isArray(z.centroid) && z.centroid.length === 2 && z.centroid.every(finite), 'Invalid hazard centroid');
@@ -99,7 +100,7 @@ export function validateMission(data) {
     for (const t of data.tle_ref.sets) require(t.l1?.length === 69 && t.l2?.length === 69 && typeof t.name === 'string' && t.l1[68] === A.tleChecksum(t.l1) && t.l2[68] === A.tleChecksum(t.l2), 'Invalid synthetic TLE');
   }
   if (m.jelly) require(finite(m.solid_end_met) && ['prime_sun_deg','clear_ray_km','high_km'].every((k) => finite(m.jelly[k])) && Array.isArray(m.jelly.stages) && Array.isArray(m.jelly.cities), 'Invalid meta.jelly: it needs solid_end_met, prime_sun_deg, clear_ray_km, high_km, stages and cities');
-  if (m.stack) require(finite(m.stack.total_m) && finite(m.stack.burn_end) && Array.isArray(m.stack.states) && m.stack.states.length && m.stack.states.every((s) => s.segs.every((k) => m.stack.segments?.[k])), 'Invalid meta.stack');
+  if (m.stack) require(finite(m.stack.total_m) && finite(m.stack.burn_end) && Array.isArray(m.stack.states) && m.stack.states.length && m.stack.states.every((s) => s.segs.every((k) => m.stack.segments?.[k]) && (!s.boosters || ['count','len','w'].every((k) => finite(s.boosters[k])))), 'Invalid meta.stack');
   if (m.extra_cities) require(Array.isArray(m.extra_cities) && m.extra_cities.every((c) => c.length === 4 && typeof c[0] === 'string' && finite(c[1]) && finite(c[2]) && finite(c[3])), 'Invalid meta.extra_cities');
   if (m.model_badge !== undefined) require(typeof m.model_badge === 'string' && m.model_badge.length <= 40, 'Invalid meta.model_badge');
   if (m.cutoff_label !== undefined) require(typeof m.cutoff_label === 'string' && m.cutoff_label.length <= 24, 'Invalid meta.cutoff_label');

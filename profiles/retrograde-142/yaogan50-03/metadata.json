@@ -91,7 +91,8 @@
       "The 10° visibility envelope is sampled during sunlit ascent for sea-level observers with Sun-centre altitude ≤0°, then clipped to the observer night side at the insertion reference epoch. Post-insertion orbit tracks do not enlarge the ascent envelope.",
       "No brightness, atmospheric refraction or extinction, weather, terrain, finite solar-disc emergence, or plume size is modeled. Geometric visibility is not a claim of naked-eye detection.",
       "The 1.5 revolutions shown are exactly 1.5 times the insertion Keplerian period in elapsed time, not a claim of an exact J2 ground-track repeat or true-anomaly recurrence.",
-      "The model TLE keeps the label PRELAUNCH MODEL - NOT OBSERVED and placeholder catalog number 00000. It is fitted to the reconstructed numerical orbit and is not the catalog element set; some TLE consumers reject this placeholder."
+      "The model TLE keeps the label PRELAUNCH MODEL - NOT OBSERVED and placeholder catalog number 00000. It is fitted to the reconstructed numerical orbit and is not the catalog element set; some TLE consumers reject this placeholder.",
+      "The rocket drawing drops its four solid boosters at the modeled T+134 s, after burnout at T+88 s, and stage 1 at T+230 s. These are cartoon states taken from model quantities, not timeline events; the fairing stays on, as its jettison is not modeled."
     ],
     "model_badge": "Provisional model",
     "about": [
@@ -99,7 +100,81 @@
       "WGS84 geometry · JPL DE440s sunlight."
     ],
     "readme_url": "https://github.com/exoplanet5/CZ-6A#scientific-limitations",
-    "observer_home": "Chengdu"
+    "observer_home": "Chengdu",
+    "stack": {
+      "total_m": 50,
+      "burn_end": 773.378,
+      "segments": {
+        "s1": {
+          "len": 27,
+          "w": 3.35,
+          "kind": "solid",
+          "band": true
+        },
+        "s2": {
+          "len": 11,
+          "w": 3.35,
+          "kind": "solid"
+        },
+        "fairing": {
+          "len": 12,
+          "w": 4.2,
+          "kind": "fairing"
+        }
+      },
+      "states": [
+        {
+          "until": 88,
+          "segs": [
+            "s1",
+            "s2",
+            "fairing"
+          ],
+          "boosters": {
+            "count": 4,
+            "len": 20,
+            "w": 2.0,
+            "burn": "solid"
+          },
+          "zoom": 1,
+          "burn": "liquid"
+        },
+        {
+          "until": 134,
+          "segs": [
+            "s1",
+            "s2",
+            "fairing"
+          ],
+          "boosters": {
+            "count": 4,
+            "len": 20,
+            "w": 2.0,
+            "burn": null
+          },
+          "zoom": 1,
+          "burn": "liquid"
+        },
+        {
+          "until": 230,
+          "segs": [
+            "s1",
+            "s2",
+            "fairing"
+          ],
+          "zoom": 1,
+          "burn": "liquid"
+        },
+        {
+          "segs": [
+            "s2",
+            "fairing"
+          ],
+          "zoom": 1.8,
+          "burn": "liquid"
+        }
+      ]
+    }
   },
   "source": {
     "status": "CONDITIONAL RECONSTRUCTION — CONSTRAINED BY GROUND REPORTS AND THE FIRST CATALOG ORBIT; NOT TELEMETRY OR A UNIQUE SOLUTION",
@@ -152,7 +227,8 @@
     ],
     "dist_km": 349.59,
     "bearing": 255.135827734821,
-    "desc": "Booster drop zone; fitted only as a ballistic booster range, no impact time or dispersion modeled"
+    "desc": "Booster drop zone; fitted only as a ballistic booster range, no impact time or dispersion modeled",
+    "label": "4 solid boosters"
   },
   "sun_sampling": {
     "kernel": "de440s.bsp",

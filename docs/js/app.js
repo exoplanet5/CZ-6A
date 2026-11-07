@@ -170,7 +170,7 @@ async function start() {
   const fallGroup=group(),zoneGroup=group(),zoneLabels=group(),trajGroup=group(),gtGroup=group(),eventGroup=group(),jellyGroup=group(),cityGroup=group();
   const PAD=A.llToVec(...M.pad),pad=sprite(squareTex,.021);pad.position.set(...PAD.map((v)=>v*1.002));scene.add(pad);
   for(const z of data.zones){const pts=[];for(let i=0;i<z.ring.length-1;i++){const a=z.ring[i],b=z.ring[i+1],dl=((b[0]-a[0]+540)%360)-180,n=Math.max(1,Math.ceil(Math.max(Math.abs(dl),Math.abs(b[1]-a[1]))/.1));for(let j=0;j<n;j++)pts.push(...A.llToVec(a[0]+dl*j/n,a[1]+(b[1]-a[1])*j/n,1.0015));}pts.push(...A.llToVec(...z.ring.at(-1),1.0015));zoneGroup.add(fillMesh(z.ring,C.ink,.18),line(pts,{color:z.color,width:1.5}));
-    const o=label(`${z.role==='boosters'?'Booster':z.role} drop zone\n${z.id} · ${z.t0}–${z.t1} UTC`,'zone below');o.position.set(...A.llToVec(...z.centroid,1.002));zoneLabels.add(o);}
+    const o=label(`${z.label??(z.role==='boosters'?'Booster':z.role)} drop zone\n${z.id} · ${z.t0}–${z.t1} UTC`,'zone below');o.position.set(...A.llToVec(...z.centroid,1.002));zoneLabels.add(o);}
   for(const [name,lon,lat,tier] of ALL_CITIES){const p=A.llToVec(lon,lat,1.001),dot=sprite(dotTex,.007);dot.position.set(...p);dot.userData={tier,city:name};cityGroup.add(dot);const o=label(name,'city');o.position.set(...p);o.userData={tier,city:name};o.element.title=`Sky chart over ${name}`;o.element.tabIndex=0;o.element.setAttribute('role','button');o.element.addEventListener('click',(e)=>openSky({name,lon,lat},false,{x:e.clientX,y:e.clientY}));o.element.addEventListener('keydown',(e)=>{if(e.key==='Enter')openSky({name,lon,lat});});cityGroup.add(o);}
   const pickup=sprite(starTex,.025),pickupLabel=label('','below');scene.add(pickup,pickupLabel);
   // Compact location pin: a solid teardrop whose tip sits on the clicked ground point.
@@ -252,7 +252,7 @@ async function start() {
 
   const timeline=()=>[...data.events,...(J.pickup&&!J.pickup.fromLiftoff?[{met:J.pickup.met,label:'Sunlight pickup'}]:[])].sort((a,b)=>a.met-b.met);
   function buildTables(){const T0=t0ms();$('t0v').textContent=A.fmtHMS(T0)+'Z';
-    $('hazard').querySelector('tbody').innerHTML=data.zones.map((z)=>`<tr><td>${esc(z.id)}<br>${esc(z.role)}</td><td>${z.t0.slice(0,2)}:${z.t0.slice(2)}–${z.t1.slice(0,2)}:${z.t1.slice(2)}Z</td><td>${z.impact?A.fmtHMS(T0+z.impact.met*1000)+'Z':esc(z.impact_note||'Not modeled')}</td></tr>`).join('');
+    $('hazard').querySelector('tbody').innerHTML=data.zones.map((z)=>`<tr><td>${esc(z.id)}<br>${esc(z.label??z.role)}</td><td>${z.t0.slice(0,2)}:${z.t0.slice(2)}–${z.t1.slice(0,2)}:${z.t1.slice(2)}Z</td><td>${z.impact?A.fmtHMS(T0+z.impact.met*1000)+'Z':esc(z.impact_note||'Not modeled')}</td></tr>`).join('');
     $('events').querySelector('tbody').innerHTML=timeline().map((e)=>`<tr><td><button class="time-jump" data-met="${e.met}">${A.fmtMET(e.met)}</button></td><td>${A.fmtHMS(T0+e.met*1000)}</td><td>${esc(e.label)}</td></tr>`).join('');
     buildJellyTables(T0);
     const R=data.tle_ref,sets=R?.sets||[];$('tle').textContent=sets.length?sets.map((s)=>{const t=A.tleForT0(s,R.t0,R.raan_rate_deg_per_min,T0);return `${t.name}\n${t.l1}\n${t.l2}`;}).join('\n\n'):'No TLE supplied for this profile.';$('copytle').disabled=!sets.length;

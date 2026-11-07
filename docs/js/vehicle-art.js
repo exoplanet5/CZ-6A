@@ -1,5 +1,6 @@
 // Cartoon of the launch vehicle, drawn nozzle-down on a square canvas from meta.stack: segment lengths and widths in metres, with the width doubled so the
-// shape reads at sprite size. The stack shortens as stages separate, so each state has its own segments and scale.
+// shape reads at sprite size. The stack shortens as stages separate, so each state has its own segments and scale. A state may carry side
+// boosters, {count, len, w, burn}: two are drawn in profile beside the core, with their own flames while burn is set.
 const COL = {outline: '#0a0d12', body: ['#8d97a2', '#f6f8fa', '#d7dde3', '#7c8792'], dark: ['#27303a', '#59656f', '#39434d', '#1a2027'], band: '#c8372d', gold: ['#8a6a1f', '#ecc75a', '#c79c36', '#73581a']};
 const WIDTH_BOOST = 2.0;
 
@@ -44,6 +45,18 @@ export function drawVehicle(g, size, stack, state, burning) {
   let y = size / 2 + h / 2;                               // base of the stack; the sprite centre stays on the stack's centre
   const baseW = segs[0].w * unit * WIDTH_BOOST;
   g.clearRect(0, 0, size, size); g.lineJoin = 'round';
+  if (st.boosters) {
+    const b = st.boosters, bw = b.w * unit * WIDTH_BOOST, bl = b.len * unit, lw = Math.max(1.4, size * .007);
+    for (const side of [-1, 1]) {
+      const bx = x + side * (baseW / 2 + bw * .42);
+      if (burning && b.burn) flame(g, bx, y + bw * .2, bw * .62, Math.min(size * .22, size - y - bw * .3), b.burn);
+      g.fillStyle = shade(g, bx, bw * .8, COL.dark); g.strokeStyle = COL.outline; g.lineWidth = lw;
+      g.beginPath(); g.moveTo(bx - bw * .2, y); g.lineTo(bx - bw * .34, y + bw * .22); g.lineTo(bx + bw * .34, y + bw * .22); g.lineTo(bx + bw * .2, y); g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = shade(g, bx, bw, COL.body); g.beginPath(); g.rect(bx - bw / 2, y - bl, bw, bl); g.fill(); g.stroke();
+      g.beginPath(); g.moveTo(bx - bw / 2, y - bl); g.quadraticCurveTo(bx - bw * .42, y - bl - bw * .7, bx, y - bl - bw * .95); g.quadraticCurveTo(bx + bw * .42, y - bl - bw * .7, bx + bw / 2, y - bl); g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = COL.band; g.fillRect(bx - bw / 2 + 1, y - bl * .55, bw - 2, Math.max(2, bl * .05));
+    }
+  }
   if (burning && st.burn) flame(g, x, y + baseW * .24, baseW * (st.burn === 'solid' ? .62 : .42), st.burn === 'solid' ? Math.min(size * .34, size - y - baseW * .3) : size * .13, st.burn);
   // nozzle
   g.fillStyle = shade(g, x, baseW * .8, COL.dark); g.strokeStyle = COL.outline; g.lineWidth = Math.max(1.4, size * .007);
