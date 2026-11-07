@@ -92,7 +92,7 @@
       "No brightness, atmospheric refraction or extinction, weather, terrain, finite solar-disc emergence, or plume size is modeled. Geometric visibility is not a claim of naked-eye detection.",
       "The 1.5 revolutions shown are exactly 1.5 times the insertion Keplerian period in elapsed time, not a claim of an exact J2 ground-track repeat or true-anomaly recurrence.",
       "The model TLE keeps the label PRELAUNCH MODEL - NOT OBSERVED and placeholder catalog number 00000. It is fitted to the reconstructed numerical orbit and is not the catalog element set; some TLE consumers reject this placeholder.",
-      "The rocket drawing drops its four solid boosters at the modeled T+134 s, after burnout at T+88 s, and stage 1 at T+230 s. These are cartoon states taken from model quantities, not timeline events; the fairing stays on, as its jettison is not modeled."
+      "The rocket drawing drops its four solid boosters at the modeled T+134 s, after burnout at T+88 s, and stage 1 at T+230 s; from insertion only the payload is drawn. These are drawing states taken from model quantities, not timeline events; the fairing jettison time is not modeled, so the fairing is shown until insertion."
     ],
     "model_badge": "Provisional model",
     "about": [
@@ -120,6 +120,11 @@
           "len": 12,
           "w": 4.2,
           "kind": "fairing"
+        },
+        "payload": {
+          "len": 3.5,
+          "w": 2.2,
+          "kind": "payload"
         }
       },
       "states": [
@@ -171,7 +176,15 @@
             "fairing"
           ],
           "zoom": 1.8,
-          "burn": "liquid"
+          "burn": "liquid",
+          "until": 773.378
+        },
+        {
+          "segs": [
+            "payload"
+          ],
+          "zoom": 3.2,
+          "burn": null
         }
       ]
     }
