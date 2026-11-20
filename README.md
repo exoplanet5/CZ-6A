@@ -2,7 +2,7 @@
 
 Interactive Earth-fixed launch trajectories, twilight illumination and observer sky charts, adapted from the [ZhuQue viewer](https://github.com/exoplanet5/ZhuQue) and SatObserver-MX / Starship IFT-14 presentation.
 
-**First and default profile: retrograde, 142° inclination.** Its first mission is the Yaogan-50 03 reconstruction for **2026-10-23, T0 10:15 UTC** (announced 18:15 Beijing time), from Taiyuan LC-9A. This is **not an SSO mission**. The Zhuque SSO reconstruction is a visualization reference, not a source of CZ-6A engine, staging or orbital assumptions.
+**First and default profile: retrograde, 142° inclination.** Its first mission is the Yaogan-50 03 reconstruction for **2026-10-23, T0 10:15 UTC** (announced 18:15 Beijing time), from Taiyuan LC-9A. The second, **Yaogan-50 04 · 27 Nov 2026** (`?mission=yaogan50-04`), is a forecast for NOTAM A6107/26. That NOTAM has the same polygon as Yaogan-50 03's, so its Earth-fixed track is the same; the T0 is 13:01 UTC, the window opening plus 8 min as on the earlier flights. It is a night launch: sunlight reaches the vehicle only 1.5 s before cutoff, at 707 km. Yaogan-50 03 stays the default. This is **not an SSO mission**. The Zhuque SSO reconstruction is a visualization reference, not a source of CZ-6A engine, staging or orbital assumptions.
 
 ## Run locally
 
@@ -98,19 +98,21 @@ The exporter resamples the existing solution; it does not fit or integrate a new
 - `tools/visibility.js`: archived source-model visibility analysis, used by the unit tests only and not published.
 - `tools/export_map_tiles.py`: reproducible local JPEG pyramid generation from the shared 21600 × 10800 Blue Marble source.
 - `tools/export_boundaries.py`: pinned, reproducible boundary-data simplification; see `docs/data/BOUNDARIES-LICENSE.txt` for source URLs, licenses and rebuild commands.
-- `docs/data/yaogan50-03.json`: self-contained first mission, including tracks, solar vectors, zones, events and synthetic TLE.
-- `profiles/retrograde-142/yaogan50-03/`: archived trajectory CSV, synthetic TLE, supplied KML and sanitized source metadata. No raw Space-Track records are included.
+- `docs/data/yaogan50-03.json`: self-contained first mission, including tracks, solar vectors, zones, events and synthetic TLE. `docs/data/yaogan50-04.json`: the Yaogan-50 04 forecast, same format.
+- `profiles/retrograde-142/<mission>/`: archived trajectory CSV, synthetic TLE, supplied KML and sanitized source metadata for each mission. No raw Space-Track records are included. The Yaogan-50 04 profile is written by the source project's `add_mission.py`, which re-times the Yaogan-50 03 solution rather than fitting a new one.
 - `tools/export_profile.py`: reproducible exporter for this specific source model. It preserves other registered profiles and missions when updating the manifest; it is not a generic CZ-6A propulsion solver.
 - `PROFILE_FORMAT.md`: data contract and adding future polar, SSO, retrograde or low-inclination configurations.
 
-Rebuild the first mission (NumPy, SciPy, pyproj and Skyfield required):
+Rebuild the first mission (NumPy, SciPy, pyproj and Skyfield required); add `--profile-dir profiles/retrograde-142/yaogan50-04` for the second:
 
 ```sh
 ~/.venvs/astro313/bin/python -I tools/export_profile.py
 ~/.venvs/astro313/bin/python -I tools/export_profile.py --check
 ```
 
-The shared kernel is read from `~/JPLDE/de440s.bsp`; it is never copied or downloaded into this repository. The browser does not need the kernel or Python. Source hashes, interpolation details, dependencies and nine export checks are recorded in `tests/profile_validation.json`.
+Adding a mission rewrites `profiles.json`, whose hash is in every mission's validation report, so export and `--check` all of them afterwards. A mission whose ascent stays in Earth's shadow sets `nominal_pickup_met_s` to `null`.
+
+The shared kernel is read from `~/JPLDE/de440s.bsp`; it is never copied or downloaded into this repository. The browser does not need the kernel or Python. Source hashes, interpolation details, dependencies and nine export checks are recorded in `tests/profile_validation.json` (Yaogan-50 03) and `tests/profile_validation_<mission>.json` (others).
 
 Rebuild/check imagery (Pillow required; the shared source image is read, not copied):
 

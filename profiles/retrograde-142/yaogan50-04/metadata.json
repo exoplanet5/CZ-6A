@@ -1,0 +1,279 @@
+{
+  "schema_version": 1,
+  "profile": {
+    "id": "retrograde-142",
+    "label": "Retrograde · 142°",
+    "family": "retrograde",
+    "default_mission": "yaogan50-03"
+  },
+  "mission": {
+    "id": "yaogan50-04",
+    "label": "Yaogan-50 04 · 27 Nov 2026",
+    "file": "data/yaogan50-04.json"
+  },
+  "meta": {
+    "title": "CZ-6A Launch visibility",
+    "vehicle": "CZ-6A",
+    "mission": "Yaogan-50 04",
+    "date": "2026-11-27",
+    "pad": [
+      111.589299,
+      38.863011
+    ],
+    "pad_alt": 1.5,
+    "pad_name": "Taiyuan LC-9A",
+    "t0_default": "13:01:00",
+    "t0_min": "12:15:00",
+    "t0_max": "13:45:00",
+    "t0_presets": [
+      {
+        "label": "Nominal 13:01",
+        "time": "13:01:00"
+      },
+      {
+        "label": "NOTAM 12:53",
+        "time": "12:53:00"
+      },
+      {
+        "label": "NOTAM 13:15",
+        "time": "13:15:00"
+      }
+    ],
+    "insertion_met": 773.378,
+    "period_s": 6082.937159857105,
+    "orbit_revolutions": 1.5,
+    "inc": 141.98146501564233,
+    "perigee_km": 695.3743314726962,
+    "apogee_km": 952.85301963038,
+    "az": 255.135827734821,
+    "views": [
+      [
+        "Global",
+        100,
+        12,
+        3.6
+      ],
+      [
+        "Taiyuan",
+        111.589299,
+        37.36,
+        1.22
+      ],
+      [
+        "Launch corridor",
+        99,
+        34,
+        2.15
+      ],
+      [
+        "West China",
+        99,
+        33,
+        2.1
+      ]
+    ],
+    "visibility": {
+      "extent": [
+        60,
+        118,
+        9,
+        51
+      ],
+      "grid_step_deg": 0.2,
+      "time_step_s": 2,
+      "levels": [
+        10
+      ]
+    },
+    "notes": [
+      "Forecast, not a reconstruction of this flight. NOTAM A6107/26 (issued 2026-11-20) has the same four vertices as A5283/26, the Yaogan-50 03 booster zone, so the Yaogan-50 03 revision-3 Earth-fixed ascent is reused unchanged. Yaogan-50 01, 02 and 03 each reached the RAAN that this ascent predicts for their liftoff times, to within about 0.15°.",
+      "T0 is not announced. The three earlier flights on this corridor lifted off 10, 8 and 8 min after their NOTAM opened; 13:01 UTC is the 12:53 opening plus 8 min. A T0 shift keeps the Earth-fixed track and rotates the orbit plane by 0.2507° per minute (RAAN 122.24° at 13:01).",
+      "Night launch (21:01 Beijing time): the ascent stays in Earth's shadow until T+771.9 s, at 707 km over southern Tibet, 1.5 s before stage-2 cutoff, so no twilight plume is expected. For T0 after 13:01:25 UTC no part of the powered ascent is sunlit; at the 12:53 opening sunlight arrives at T+743 s. After insertion the payload and stage stay sunlit as they head west.",
+      "Shared ascent, from the Yaogan-50 03 fit: The lower ascent is a point-mass CZ-6A with published masses and thrusts, the typical flight sequence (booster burnout 114.5 s, separation 117.5 s, fairing 179 s, stage separation 238.5 s; stage-2 ignition at 240 s is assumed), explicit drag and a fitted pitch program. One effective thrust scale was calibrated on the triangulated December 2025 CZ-6A ascent (1.06) and fitted here at 0.95. The pitch program is fitted to two untimed ground reports: at N39.00 E110.12 the rocket crossed above the Moon at 1.6x its elevation (model 1.53x), and at N37.76 E110.93 the sunlit rising path looked nearly straight. A ballistic booster range is fitted to the NOTAM booster zone (model 315 km against 350 km). The reports constrain climb geometry, not timing.",
+      "From T+300 s the stage-2 path is the revision-2 solution, fitted to the first catalog elements of 2026-240A (assumed payload; identity unconfirmed), and is kept to within 0.03 km; a bridge steering segment from ignition joins it. The cutoff state is about 3 km from that SGP4 state. The March Yaogan-50 02 reconstruction remains a weak template.",
+      "The dogleg is attributed to stage 1 and NOTAM A6107/26 to the booster drop zone. The plane change is still carried by the stage-2 steering surrogate. Staging times follow the typical published CZ-6A sequence, not this flight’s telemetry, and are not shown as timeline events.",
+      "NOTAM 12:53–13:15 UTC is a hazard-area activation interval, not launch-time limits or an insertion constraint. The 12:15–13:45 UTC selector is an exploratory range, not an announced launch window.",
+      "Shifting T0 reuses the same Earth-fixed (ECEF) trajectory and changes the solar geometry; it does not reoptimize dynamics or propagate a newly fitted orbit.",
+      "Source positions and velocities use a TEME-like frame with GMST rotation, UTC approximating UT1 and no polar motion. The exporter converts to ECEF and resamples with cubic Hermite interpolation; it does not reoptimize or integrate a new trajectory.",
+      "The upper-stage and orbit dynamics include central gravity and J2. Higher harmonics, post-insertion maneuvers, fragmentation and debris descent are not modeled.",
+      "Altitude samples are WGS84 geodetic ellipsoidal heights in km. Perigee and apogee are orbital radii minus the WGS84 equatorial radius; these are not the same altitude convention.",
+      "Sunlight uses the geometric Sun centre from the shared DE440s ephemeris and WGS84 ellipsoidal Earth occultation. The solar table is linearly interpolated in ECEF at 30-second cadence.",
+      "The 10° visibility envelope is sampled during sunlit ascent for sea-level observers with Sun-centre altitude ≤0°, then clipped to the observer night side at the insertion reference epoch. Post-insertion orbit tracks do not enlarge the ascent envelope.",
+      "No brightness, atmospheric refraction or extinction, weather, terrain, finite solar-disc emergence, or plume size is modeled. Geometric visibility is not a claim of naked-eye detection.",
+      "The 1.5 revolutions shown are exactly 1.5 times the insertion Keplerian period in elapsed time, not a claim of an exact J2 ground-track repeat or true-anomaly recurrence.",
+      "The model TLE keeps the label PRELAUNCH MODEL - NOT OBSERVED and placeholder catalog number 00000. It is fitted to the reconstructed numerical orbit and is not the catalog element set; some TLE consumers reject this placeholder.",
+      "The rocket drawing follows that sequence: the four solid boosters burn to T+114.5 s and drop at T+117.5 s, the fairing at T+179 s and stage 1 at T+238.5 s; stage 2 ignites at T+240 s, and from insertion only the payload is drawn. These are drawing states, not timeline events."
+    ],
+    "model_badge": "Forecast",
+    "about": [
+      "Forecast: the Yaogan-50 03 reconstruction re-timed to this NOTAM; not fitted to this flight, not telemetry.",
+      "WGS84 geometry · JPL DE440s sunlight."
+    ],
+    "readme_url": "https://github.com/exoplanet5/CZ-6A#scientific-limitations",
+    "observer_home": "Lhasa",
+    "stack": {
+      "total_m": 50,
+      "burn_end": 773.378,
+      "segments": {
+        "s1": {
+          "len": 27,
+          "w": 3.35,
+          "kind": "solid",
+          "band": true
+        },
+        "s2": {
+          "len": 11,
+          "w": 3.35,
+          "kind": "solid"
+        },
+        "fairing": {
+          "len": 12,
+          "w": 4.2,
+          "kind": "fairing"
+        },
+        "payload": {
+          "len": 3.5,
+          "w": 2.2,
+          "kind": "payload"
+        }
+      },
+      "states": [
+        {
+          "until": 114.5,
+          "segs": [
+            "s1",
+            "s2",
+            "fairing"
+          ],
+          "boosters": {
+            "count": 4,
+            "len": 18.5,
+            "w": 2.0,
+            "burn": "solid"
+          },
+          "zoom": 1,
+          "burn": "liquid"
+        },
+        {
+          "until": 117.5,
+          "segs": [
+            "s1",
+            "s2",
+            "fairing"
+          ],
+          "boosters": {
+            "count": 4,
+            "len": 18.5,
+            "w": 2.0,
+            "burn": null
+          },
+          "zoom": 1,
+          "burn": "liquid"
+        },
+        {
+          "until": 179,
+          "segs": [
+            "s1",
+            "s2",
+            "fairing"
+          ],
+          "zoom": 1,
+          "burn": "liquid"
+        },
+        {
+          "until": 238.5,
+          "segs": [
+            "s1",
+            "s2",
+            "payload"
+          ],
+          "zoom": 1,
+          "burn": "liquid"
+        },
+        {
+          "until": 773.378,
+          "segs": [
+            "s2",
+            "payload"
+          ],
+          "zoom": 1.8,
+          "burn": "liquid"
+        },
+        {
+          "segs": [
+            "payload"
+          ],
+          "zoom": 3.2,
+          "burn": null
+        }
+      ]
+    },
+    "powered_intervals": [
+      [
+        0,
+        238.5
+      ],
+      [
+        240,
+        773.378
+      ]
+    ]
+  },
+  "source": {
+    "status": "FORECAST — THE YAOGAN-50 03 RECONSTRUCTION RE-TIMED TO A NEW T0 ON THE SAME NOTAM CORRIDOR; NOT FITTED TO THIS FLIGHT, NOT TELEMETRY",
+    "nominal_launch_utc": "2026-11-27T13:01:00Z",
+    "frame": "TEME-like equator/equinox of date; GMST rotation with UTC used as UT1; not J2000",
+    "earth_rotation_rad_s": 7.2921158553e-05,
+    "raan_rate_deg_per_min": 0.2506844773374723,
+    "nominal_pickup_met_s": 771.8909498990465,
+    "files": {
+      "trajectory": "Yaogan-50_04_trajectory.csv",
+      "tle": "Yaogan-50_04_prelaunch.tle",
+      "notam": "Launch_NOTAM_20261127_CZ-6A.kml"
+    },
+    "sha256": {
+      "Yaogan-50_04_trajectory.csv": "30359bb937a1aadd5d19b3ba34ff895ab0f9e080c65e4340a93664795950a4ef",
+      "Yaogan-50_04_prelaunch.tle": "6295007ebab6b14e3eede9adb40e38a769dec9dd902f779cc815f5426b48033e",
+      "Launch_NOTAM_20261127_CZ-6A.kml": "2da3e35963b6ea258982a0ed5d561ad3b1c5e47e967e48877db9a632310fc943"
+    },
+    "reference_products": [
+      {
+        "file": "Yaogan-50_04_solution.json",
+        "sha256": "3be5ac19a223fa74eb46689dc9925e9dfd22dfdf0657606da2da9365cd32b48d"
+      },
+      {
+        "file": "ascent_visibility.json",
+        "sha256": "b8a4a7150f7954e532c0b0118e0b8b12b190a241602cf16eaec797396fdda286"
+      },
+      {
+        "file": "add_mission.py",
+        "sha256": "cd28de47ee8a24c358c7a946c6357885080c7db3dd9affc7d858b070e760ade0"
+      }
+    ],
+    "reference_products_required_to_export": false,
+    "privacy": "Only selected model parameters and basename/hash provenance are retained; no absolute source paths or raw Space-Track records are included."
+  },
+  "zone": {
+    "key": "boosters",
+    "id": "A6107/26",
+    "role": "boosters",
+    "color": "#eeeeee",
+    "t0": "1253",
+    "t1": "1315",
+    "centroid": [
+      107.74166650000001,
+      37.9916665
+    ],
+    "dist_km": 349.59,
+    "bearing": 255.135827734821,
+    "desc": "Booster drop zone; fitted only as a ballistic booster range, no impact time or dispersion modeled",
+    "label": "4 solid boosters"
+  },
+  "sun_sampling": {
+    "kernel": "de440s.bsp",
+    "dt_s": 30,
+    "minimum_prelaunch_met_s": -600,
+    "padding_s": 60,
+    "model": "DE440s geometric Sun centre; WGS84 occultation"
+  }
+}

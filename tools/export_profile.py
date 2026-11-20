@@ -195,7 +195,7 @@ def booster_zone(path, record):
 def tle_reference(path, record):
     lines = [line.strip() for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
     require(len(lines) == 3, "Expected a named, single-set reference TLE")
-    require(lines[0] == "YAOGAN-50 03 PRELAUNCH MODEL - NOT OBSERVED", "TLE must be labeled synthetic")
+    require(lines[0].endswith(" PRELAUNCH MODEL - NOT OBSERVED"), "TLE must be labeled synthetic")
     for number, line in enumerate(lines[1:], 1):
         require(len(line) == 69 and line.startswith(f"{number} 00000"), "Invalid placeholder TLE line")
         checksum = sum(int(c) if c.isdigit() else int(c == "-") for c in line[:68]) % 10
@@ -409,18 +409,36 @@ def validate(mission, record, summary, kernel):
     times = ascent["met0"] + np.arange(len(ascent["lon"])) * ascent["dt"]
     clearances = np.array([clearance(t) for t in times])
     transitions = np.flatnonzero((clearances[:-1] <= 0) & (clearances[1:] > 0))
+    expected_pickup = record["source"]["nominal_pickup_met_s"]
+    checks["solar_km_units_and_full_t0_prelaunch_coverage"] = True
+    if expected_pickup is None:
+        # A night launch can stay in Earth's shadow to insertion; the page then shows no pickup.
+        require(len(transitions) == 0 and np.all(clearances <= 0),
+                "Source says no sunlit ascent, but exported samples find one")
+        checks["nominal_ascent_stays_in_shadow"] = True
+        return finish_report(mission, record, summary, kernel, checks, reconstructed, track_summary,
+                             vectors, finish, needed_end, sampling, end, insertion, period, None)
     require(len(transitions) > 0, "No exported-sample sunlight pickup")
     j = transitions[0]
     pickup = float(brentq(clearance, times[j], times[j + 1], xtol=1e-8))
     pickup_geo_linear = float(brentq(lambda t: clearance(t, "geodetic_linear"),
                                     times[j], times[j + 1], xtol=1e-8))
-    expected_pickup = record["source"]["nominal_pickup_met_s"]
     require(abs(pickup - expected_pickup) < 0.1 and abs(pickup_geo_linear - expected_pickup) < 0.1,
             "Exported-sample pickup differs from the source reference by >=0.1 s")
     require(clearance(pickup - 0.1) < 0 < clearance(pickup + 0.1), "Shadow transition failed")
-    checks["solar_km_units_and_full_t0_prelaunch_coverage"] = True
     checks["nominal_pickup_within_0_1_s"] = True
     checks["shadow_before_and_sunlight_after_pickup"] = True
+    return finish_report(mission, record, summary, kernel, checks, reconstructed, track_summary,
+                         vectors, finish, needed_end, sampling, end, insertion, period,
+                         {"reference_met_s": expected_pickup, "ecef_linear_met_s": pickup,
+                          "geodetic_linear_met_s": pickup_geo_linear,
+                          "ecef_linear_error_s": pickup - expected_pickup,
+                          "geodetic_linear_error_s": pickup_geo_linear - expected_pickup})
+
+
+def finish_report(mission, record, summary, kernel, checks, reconstructed, track_summary,
+                  vectors, finish, needed_end, sampling, end, insertion, period, nominal_pickup):
+    sun = mission["sun"]
     expected_events = [0, insertion, insertion + period, end]
     require([e["met"] for e in mission["events"]] == expected_events,
             "Only liftoff, insertion, 1 and 1.5 revolution events are permitted")
@@ -450,13 +468,7 @@ def validate(mission, record, summary, kernel):
             "minimum_prelaunch_met_s": sampling["minimum_prelaunch_met_s"],
             "kernel": kernel,
         },
-        "nominal_pickup": {
-            "reference_met_s": expected_pickup,
-            "ecef_linear_met_s": pickup,
-            "geodetic_linear_met_s": pickup_geo_linear,
-            "ecef_linear_error_s": pickup - expected_pickup,
-            "geodetic_linear_error_s": pickup_geo_linear - expected_pickup,
-        },
+        "nominal_pickup": nominal_pickup,
         "dependencies": {name: importlib.metadata.version(name)
                          for name in ("numpy", "scipy", "pyproj", "skyfield", "jplephem")},
     }
@@ -468,13 +480,18 @@ def main():
                         help="Directory containing sanitized metadata.json and source files")
     parser.add_argument("--output-dir", type=Path, default=ROOT / "docs" / "data",
                         help="Destination for mission JSON and profiles.json")
-    parser.add_argument("--validation", type=Path, default=ROOT / "tests" / "profile_validation.json",
-                        help="Validation report (written on export, compared with --check)")
+    parser.add_argument("--validation", type=Path, default=None,
+                        help="Validation report (written on export, compared with --check); default "
+                             "tests/profile_validation.json for yaogan50-03, else tests/profile_validation_<mission>.json")
     parser.add_argument("--check", action="store_true", help="Validate and compare existing exports; write nothing")
     args = parser.parse_args()
     metadata_path = args.profile_dir / "metadata.json"
     record = json.loads(metadata_path.read_text(encoding="utf-8"))
     require(record["schema_version"] == 1, "Invalid source metadata schema")
+    if args.validation is None:
+        mission_id = record["mission"]["id"]
+        args.validation = ROOT / "tests" / ("profile_validation.json" if mission_id == "yaogan50-03"
+                                            else f"profile_validation_{mission_id}.json")
     require(clock(record["meta"], "t0_default") == utc(record["source"]["nominal_launch_utc"]),
             "Nominal T0 and source epoch must agree")
     paths = source_paths(args.profile_dir, record)
@@ -506,7 +523,8 @@ def main():
             path.write_text(content, encoding="utf-8")
     print(json.dumps({"mode": "checked" if args.check else "exported",
                       "profile": record["profile"]["id"], "checks_passed": len(report["checks"]),
-                      "nominal_pickup_met_s": report["nominal_pickup"]["ecef_linear_met_s"],
+                      "mission": record["mission"]["id"],
+                      "nominal_pickup_met_s": (report["nominal_pickup"] or {}).get("ecef_linear_met_s"),
                       "sun_start_utc": mission["sun"]["start_utc"],
                       "sun_end_utc": report["sun"]["end_utc"]}, indent=2))
 

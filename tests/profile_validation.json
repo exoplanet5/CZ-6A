@@ -68,13 +68,13 @@
     "jplephem": "2.24"
   },
   "inputs_sha256": {
-    "metadata.json": "9c00ae68486e57e53bcf145c5055129d58c06e26c5664f1d30d7fae0beba7608",
+    "metadata.json": "29f5f72d18ee271fe31eec99b9e415040584cccab854540ac2e804d6f4f53cd9",
     "Yaogan-50_03_trajectory.csv": "a3998f4877296853ae1d565103928805be31a11079b9de6161bdd3550554dc59",
     "Yaogan-50_03_prelaunch.tle": "a9285a5aa2b67b5ff4d8d015535527d65c7909481c571883b06f2d4258cb77d0",
     "Launch_NOTAM_20261023_CZ-6A.kml": "474bbb9dc100868186622b95feb2564104939ab0b1a270c87a3c5726632f1d12"
   },
   "outputs_sha256": {
     "yaogan50-03.json": "1dada8d63427b2b08bc0cc3a97d31ed858a39ed8ef59768e64bc5547cd825349",
-    "profiles.json": "0f2e169c05e90d314ea374eaca4a0089b180d28f4f1ce790431ca68dc1fbce39"
+    "profiles.json": "568269ebb52e08422abce1735bb8c1cbace36957db000043fdafd4bfb9d58125"
   }
 }

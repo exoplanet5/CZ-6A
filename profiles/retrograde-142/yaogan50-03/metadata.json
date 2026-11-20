@@ -233,11 +233,11 @@
       },
       {
         "file": "README.md",
-        "sha256": "433e507e684a1a3ba807dc8b06b1f446e36af0fa8eb0f96068d88886a38aa390"
+        "sha256": "eaa3ee17b7fa0e9a84dbc4f8cc3c33aa07b51bdb30b9dd01cc08538368a03a1d"
       },
       {
         "file": "ascent_visibility.py",
-        "sha256": "d0f5896f992521d97ae6a124711d379520541df288d9e42d831e1376690d9c68"
+        "sha256": "e404f802bedfbb94048766028e9a741d6c5daf573b5f9d7dddefb95c27e6c357"
       },
       {
         "file": "ascent_visibility.json",

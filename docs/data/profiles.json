@@ -18,6 +18,11 @@
           "id": "yaogan50-03",
           "label": "Yaogan-50 03 · 23 Oct 2026",
           "file": "data/yaogan50-03.json"
+        },
+        {
+          "id": "yaogan50-04",
+          "label": "Yaogan-50 04 · 27 Nov 2026",
+          "file": "data/yaogan50-04.json"
         }
       ]
     }
