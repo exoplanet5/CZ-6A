@@ -665,7 +665,7 @@
       },
       {
         "file": "add_mission.py",
-        "sha256": "d851b9ad27240c1416a93f87d69c28a1df9a52decc8ad37e5b02ac4b782d8476"
+        "sha256": "d6d37f550682cd0970aa645873ab2b7359142d1bd25ccb97b9423d4d9ff0ba6e"
       }
     ],
     "reference_products_required_to_export": false,

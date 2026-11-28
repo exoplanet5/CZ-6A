@@ -4,7 +4,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as A from '../docs/js/astro.js';
-import {validateManifest,validateMission,selectProfile,createFlight,solarEphemeris,sunlightMargin,setSunlightModel,computeJelly} from '../docs/js/profile.js';
+import {validateManifest,validateMission,selectProfile,missionMenu,createFlight,solarEphemeris,sunlightMargin,setSunlightModel,computeJelly} from '../docs/js/profile.js';
 const load=(name)=>JSON.parse(fs.readFileSync(new URL('../docs/data/'+name,import.meta.url)));
 const near=(a,b,tol=1e-7)=>assert.ok(Math.abs(a-b)<tol,`${a} vs ${b}`);
 const index=load('profiles.json'),ref=load('yaogan50-03.json'),nov=load('yaogan50-04.json');
@@ -17,6 +17,17 @@ test('manifest has one profile per perigee and opens on the latest mission',()=>
   assert.equal(index.default_profile,'retrograde-142-732');
   assert.equal(query('').entry.id,'yaogan50-04');assert.ok(nov.meta.date>ref.meta.date);
   for(const p of index.profiles)assert.equal(p.default_mission,p.missions.at(-1).id);
+});
+test('the mission menu lists both flights, latest first, whichever profile is open',()=>{
+  assert.deepEqual(index.mission_order,['yaogan50-04','yaogan50-03']);
+  for(const p of index.profiles)assert.deepEqual(missionMenu(index,p).map(({profile,mission})=>[mission.id,profile.id]),
+    [['yaogan50-04','retrograde-142-732'],['yaogan50-03','retrograde-142']]);
+  const bad=structuredClone(index);bad.mission_order=['yaogan50-04','nope'];assert.throws(()=>validateManifest(bad));
+  bad.mission_order=['yaogan50-04','yaogan50-04'];assert.throws(()=>validateManifest(bad));
+  const partial=structuredClone(index);partial.mission_order=['yaogan50-03'];validateManifest(partial);
+  assert.deepEqual(missionMenu(partial,partial.profiles[1]).map((x)=>x.mission.id),['yaogan50-03','yaogan50-04']);
+  const plain=structuredClone(index);delete plain.mission_order;
+  assert.deepEqual(missionMenu(plain,plain.profiles[1]).map((x)=>x.mission.id),['yaogan50-04']);
 });
 test('a mission id finds its profile, also in links made before the profiles were split',()=>{
   for(const q of ['mission=yaogan50-04','profile=retrograde-142&mission=yaogan50-04','profile=retrograde-142-732&mission=yaogan50-04','profile=retrograde-142-732']){

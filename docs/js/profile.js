@@ -31,7 +31,22 @@ export function validateManifest(index) {
     require(missions.has(p.default_mission), `Missing default mission for ${p.id}`);
   }
   require(ids.has(index.default_profile), 'Missing default profile');
+  if (index.mission_order !== undefined) {
+    // One mission menu across profiles needs mission ids that are unique across the manifest.
+    const all = index.profiles.flatMap((p) => p.missions.map((m) => m.id));
+    require(new Set(all).size === all.length, 'mission_order needs mission ids unique across profiles');
+    require(Array.isArray(index.mission_order) && new Set(index.mission_order).size === index.mission_order.length
+      && index.mission_order.every((id) => all.includes(id)), 'mission_order must list manifest missions once each');
+  }
   return index;
+}
+export function missionMenu(index, profile) {
+  // With mission_order, the menu lists every mission of the page in that order (any left out follow in manifest order);
+  // picking one in another profile switches profile. Without it, the menu holds the current profile's missions.
+  if (!Array.isArray(index.mission_order)) return profile.missions.map((mission) => ({ profile, mission }));
+  const all = index.profiles.flatMap((p) => p.missions.map((mission) => ({ profile: p, mission })));
+  const rank = (id) => { const i = index.mission_order.indexOf(id); return i < 0 ? index.mission_order.length : i; };
+  return all.map((item, i) => [rank(item.mission.id), i, item]).sort((a, b) => a[0] - b[0] || a[1] - b[1]).map((x) => x[2]);
 }
 export function selectProfile(index, query) {
   // A mission id alone is enough: older links carry no profile, and a mission can move to another profile.

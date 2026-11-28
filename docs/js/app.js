@@ -6,7 +6,7 @@ import {LineSegments2} from 'three/addons/lines/LineSegments2.js';
 import {LineSegmentsGeometry} from 'three/addons/lines/LineSegmentsGeometry.js';
 import {CSS2DRenderer, CSS2DObject} from 'three/addons/renderers/CSS2DRenderer.js';
 import * as A from './astro.js';
-import {fetchJSON, validateManifest, validateMission, selectProfile, createFlight, solarEphemeris, sunlightMargin, computeJelly, clockSeconds, clamp, escapeHTML as esc} from './profile.js';
+import {fetchJSON, validateManifest, validateMission, selectProfile, missionMenu, createFlight, solarEphemeris, sunlightMargin, computeJelly, clockSeconds, clamp, escapeHTML as esc} from './profile.js';
 import {createSkyChart} from './skychart.js';
 import {validateBoundaries,boundarySegments} from './boundaries.js';
 import {createMapTiles} from './map-tiles.js';
@@ -221,10 +221,10 @@ async function start() {
   function setT0(v){if(!Number.isFinite(v))return;state.t0=clamp(v,t0Min,t0Max);$('t0').value=state.t0;onT0Change();}
   function option(select,value,text){const o=document.createElement('option');o.value=value;o.textContent=text;select.appendChild(o);}
   for(const p of index.profiles)option($('profilesel'),p.id,p.label);$('profilesel').value=profile.id;
-  for(const m of profile.missions)option($('launchsel'),m.id,m.label);$('launchsel').value=entry.id;
+  const menu=missionMenu(index,profile);for(const {mission:m} of menu)option($('launchsel'),m.id,m.label);$('launchsel').value=entry.id;
   function selectMission(p,m){const q=new URLSearchParams(location.search);q.set('profile',p);q.set('mission',m);for(const k of ['t0','met','cam','sky','follow'])q.delete(k);location.search=q;}
   $('profilesel').onchange=()=>{const p=index.profiles.find((p)=>p.id===$('profilesel').value);selectMission(p.id,p.default_mission);};
-  $('launchsel').onchange=()=>selectMission(profile.id,$('launchsel').value);
+  $('launchsel').onchange=()=>{const item=menu.find((x)=>x.mission.id===$('launchsel').value);selectMission(item.profile.id,item.mission.id);};
   Object.assign($('t0'),{min:t0Min,max:t0Max,value:state.t0});Object.assign($('met'),{min:metMin,max:MET_END,value:state.met});
   $('t0presets').innerHTML=M.t0_presets.map((p)=>`<button class="btn" data-t0="${esc(p.time)}">${esc(p.label)}</button>`).join('');
   $('views').innerHTML=M.views.map((v,i)=>`<button class="btn" data-view="${i}">${esc(v[0])}</button>`).join('');
