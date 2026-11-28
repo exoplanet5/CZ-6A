@@ -34,7 +34,10 @@ export function validateManifest(index) {
   return index;
 }
 export function selectProfile(index, query) {
-  const profile = index.profiles.find((p) => p.id === query.get('profile')) || index.profiles.find((p) => p.id === index.default_profile);
+  // A mission id alone is enough: older links carry no profile, and a mission can move to another profile.
+  const holds = (p) => p.missions.some((m) => m.id === query.get('mission'));
+  const named = index.profiles.find((p) => p.id === query.get('profile'));
+  const profile = (named && (holds(named) || !index.profiles.some(holds)) ? named : index.profiles.find(holds)) || index.profiles.find((p) => p.id === index.default_profile);
   const entry = profile.missions.find((m) => m.id === query.get('mission')) || profile.missions.find((m) => m.id === profile.default_mission);
   return { profile, entry };
 }
@@ -105,6 +108,11 @@ export function validateMission(data) {
   if (m.model_badge !== undefined) require(typeof m.model_badge === 'string' && m.model_badge.length <= 40, 'Invalid meta.model_badge');
   if (m.cutoff_label !== undefined) require(typeof m.cutoff_label === 'string' && m.cutoff_label.length <= 24, 'Invalid meta.cutoff_label');
   if (m.about !== undefined) require(Array.isArray(m.about) && m.about.every((t) => typeof t === 'string'), 'Invalid meta.about');
+  if (m.sunlight !== undefined) {
+    const t = m.sunlight, list = (v) => Array.isArray(v) && v.length >= 2 && v.every(finite);
+    require(['r_local_km','top_km','floor_km','floor_index_of_refraction','half_bending_deg'].every((k) => finite(t[k])) && t.floor_km === 0
+      && list(t.partial_bending_deg) && list(t.refractivity) && t.partial_bending_deg.length === t.refractivity.length, 'Invalid meta.sunlight');
+  }
   if (m.readme_url !== undefined) require(typeof m.readme_url === 'string' && /^https:\/\//.test(m.readme_url), 'Invalid meta.readme_url');
   return data;
 }
@@ -137,6 +145,7 @@ export function createFlight(data) {
   const flight = data.meta.flight_segments.map((k) => tracks[k]);
   const shipAt = (met) => (flight.find((s) => met <= s.end) || flight.at(-1)).sample(met);
   const poweredAt = (met) => data.meta.powered_intervals.some(([a,b]) => met > a && met < b);
+  setSunlightModel(data.meta.sunlight);
   return {tracks, flight, shipAt, poweredAt, end:flight.at(-1).end};
 }
 export function solarEphemeris(table) {
@@ -154,11 +163,48 @@ export function sunlightClearance(position, sun) {
   const t = clamp(-r.reduce((s,v,i) => s+v*d[i],0)/d.reduce((s,v) => s+v*v,0),0,1);
   return r.reduce((s,v,i) => s+(v+t*d[i])**2,0)-1;
 }
+// ---- Sunlight with atmospheric refraction ----
+// meta.sunlight is the floor-ray table of the source model (sunlight.py): the bending of the ray that grazes the
+// ellipsoid and the refractivity of the air, both at uniform steps of s = sqrt(altitude / top_km). A point is lit
+// when the Sun's true depression below its local horizontal is at most
+//   acos(n_floor R / (n_h r)) + bending(floor -> point) + bending(floor -> space),
+// 1.1 deg more than the straight ray allows for a point above the atmosphere. Without the table the test is the
+// straight Sun-centre ray. The ellipsoid enters through the straight ray's closest point, as in sunlightClearance.
+let REFRACTION = null;
+export function setSunlightModel(table) { REFRACTION = table ?? null; }
+const tableAt = (values, s) => { const f = clamp(s,0,1)*(values.length-1), i = Math.min(values.length-2,Math.floor(f)); return values[i]+(values[i+1]-values[i])*(f-i); };
+export function geodeticHeight(P) {   // scene frame [x, z, -y] km -> height above the WGS84 ellipsoid, km
+  const p = Math.hypot(P[0],P[2]), z = P[1], scaled = Math.hypot(P[0]/A.RE,P[1]/A.WGS84_B,P[2]/A.RE);
+  if (scaled < .5) return (scaled-1)*A.RE;   // deep inside the Earth the iteration is ill-conditioned; only "far below" matters there
+  let lat = Math.atan2(z,p*(1-A.WGS84_E2)), h = 0;
+  for (let i = 0; i < 8; i++) {
+    const sine = Math.sin(lat), N = A.RE/Math.sqrt(1-A.WGS84_E2*sine*sine);
+    h = Math.abs(lat) < Math.PI/4 ? p/Math.cos(lat)-N : z/sine-N*(1-A.WGS84_E2);
+    lat = Math.atan2(z,p*(1-A.WGS84_E2*N/(N+h)));
+  }
+  return h;
+}
+// Positive when the vehicle has direct sunlight: degrees of margin with the refraction table, else the straight-ray clearance.
+export function sunlightMargin(position, sun) {
+  const R = REFRACTION;
+  if (!R) return sunlightClearance(position,sun);
+  const axes = [A.RE,A.WGS84_B,A.RE];
+  let rd = 0, dd = 0;
+  for (let i = 0; i < 3; i++) { const d = (sun[i]-position[i])/axes[i]; rd += position[i]/axes[i]*d; dd += d*d; }
+  const f = -rd/dd;
+  if (f <= 0) return 90;   // the Sun is above the local horizontal
+  const point = [0,1,2].map((i) => position[i]+Math.min(f,1)*(sun[i]-position[i]));
+  const base = R.r_local_km+geodeticHeight(point), distance = Math.hypot(point[0]-position[0],point[1]-position[1],point[2]-position[2]);
+  const r = Math.hypot(distance,base), alt = Math.max(r-R.r_local_km,0), s = Math.sqrt(clamp(alt/R.top_km,0,1));
+  const nh = 1+(alt < R.top_km ? tableAt(R.refractivity,s) : 0);
+  const limit = Math.acos(clamp(R.floor_index_of_refraction*(R.r_local_km+R.floor_km)/(nh*r),-1,1))*A.R2D+tableAt(R.partial_bending_deg,s)+R.half_bending_deg;
+  return limit-Math.atan2(distance,base)*A.R2D;
+}
 export function shadowHeight(lon, lat, sun) {
   if (A.lookAngles(A.siteFrame(lon,lat),sun).el >= 0) return 0;
   let lo = 0, hi = 1e6;
-  if (sunlightClearance(A.geodeticToScene(lon,lat,hi),sun) <= 0) return Infinity;
-  for (let j = 0; j < 30; j++) { const mid = (lo+hi)/2; if (sunlightClearance(A.geodeticToScene(lon,lat,mid),sun)>0) hi = mid; else lo = mid; }
+  if (sunlightMargin(A.geodeticToScene(lon,lat,hi),sun) <= 0) return Infinity;
+  for (let j = 0; j < 30; j++) { const mid = (lo+hi)/2; if (sunlightMargin(A.geodeticToScene(lon,lat,mid),sun)>0) hi = mid; else lo = mid; }
   return (lo+hi)/2;
 }
 export function computeJelly(asc, sunAt, T0) {
@@ -166,12 +212,12 @@ export function computeJelly(asc, sunAt, T0) {
   let pickup = null;
   for (let i = 0; i < asc.n; i++) {
     const sun = sunAt(T0+asc.metAt(i)*1000), p = asc.P.subarray(3*i,3*i+3);
-    lit[i] = sunlightClearance(p,sun)>0 ? 1 : 0;
+    lit[i] = sunlightMargin(p,sun)>0 ? 1 : 0;
     dep[i] = -A.lookAngles(A.siteFrame(asc.lon[i],asc.lat[i]),sun).el;
     h[i] = shadowHeight(asc.lon[i],asc.lat[i],sun);
     if (i && lit[i] !== lit[i-1]) {
       let lo = asc.metAt(i-1), hi = asc.metAt(i);
-      for (let j = 0; j < 24; j++) { const mid = (lo+hi)/2, on = sunlightClearance(asc.sample(mid).p,sunAt(T0+mid*1000))>0; if (on === !!lit[i-1]) lo = mid; else hi = mid; }
+      for (let j = 0; j < 24; j++) { const mid = (lo+hi)/2, on = sunlightMargin(asc.sample(mid).p,sunAt(T0+mid*1000))>0; if (on === !!lit[i-1]) lo = mid; else hi = mid; }
       const met = (lo+hi)/2; transitions.push({met,lit:!!lit[i]});
       if (lit[i] && !pickup) pickup = {met,...asc.sample(met)};
     }

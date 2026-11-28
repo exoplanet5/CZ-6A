@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "default_profile": "retrograde-142",
+  "default_profile": "retrograde-142-732",
   "supported_families": [
     "retrograde",
     "polar",
@@ -10,7 +10,7 @@
   "profiles": [
     {
       "id": "retrograde-142",
-      "label": "Retrograde · 142°",
+      "label": "Retrograde 142° · 702 km",
       "family": "retrograde",
       "default_mission": "yaogan50-03",
       "missions": [
@@ -18,7 +18,15 @@
           "id": "yaogan50-03",
           "label": "Yaogan-50 03 · 23 Oct 2026",
           "file": "data/yaogan50-03.json"
-        },
+        }
+      ]
+    },
+    {
+      "id": "retrograde-142-732",
+      "label": "Retrograde 142° · 732 km",
+      "family": "retrograde",
+      "default_mission": "yaogan50-04",
+      "missions": [
         {
           "id": "yaogan50-04",
           "label": "Yaogan-50 04 · 27 Nov 2026",

@@ -1,5 +1,5 @@
 import * as A from '../docs/js/astro.js';
-import {createFlight, solarEphemeris, sunlightClearance} from '../docs/js/profile.js';
+import {createFlight, solarEphemeris, sunlightMargin} from '../docs/js/profile.js';
 
 export function calculateVisibility(data, T0) {
   const {tracks} = createFlight(data), asc = tracks.ascent, sunAt = solarEphemeris(data.sun), cfg = data.meta.visibility;
@@ -11,7 +11,7 @@ export function calculateVisibility(data, T0) {
   for (let k = 0; k <= count; k++) {
     const met = asc.met0 + (asc.end-asc.met0)*k/count;
     const p = asc.sample(met).p, sun = sunAt(T0+met*1000);
-    if (sunlightClearance(p,sun)>0) samples.push({p,sun});
+    if (sunlightMargin(p,sun)>0) samples.push({p,sun});
   }
   const referenceSun = sunAt(T0+data.meta.insertion_met*1000), area = Object.fromEntries(cfg.levels.map((l) => [l,0]));
   let nonempty = 0;

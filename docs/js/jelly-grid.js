@@ -3,7 +3,7 @@
 // The grid holds the highest elevation above that minimum.  The night clip is not on the grid: the zone shader computes it per pixel from the
 // same Sun vector as the Sun 0 line, so the zone meets that line exactly at every zoom.  Areas use one reference epoch, the sunlight pickup.
 import * as A from './astro.js';
-import {sunlightClearance} from './profile.js';
+import {sunlightMargin} from './profile.js';
 
 const R_AREA = 6371, S4_THIN = 3;
 
@@ -41,7 +41,7 @@ export function createJellyZones(meta, asc, poweredAt, sunAt) {
       const met = asc.met0 + (asc.end - asc.met0) * k / count;
       if (!poweredAt(met)) continue;
       const p = asc.sample(met).p;
-      if (sunlightClearance(p, sunAt(T0 + met * 1000)) <= 0) continue;
+      if (sunlightMargin(p, sunAt(T0 + met * 1000)) <= 0) continue;
       if (met <= meta.solid_end_met) solid.push(p);
       else if (c4++ % S4_THIN === 0) s4.push(p);
     }
@@ -75,7 +75,7 @@ export function viewerTable(cities, asc, solidEnd, J, sunAt, T0, poweredAt, step
   for (let met = J.pickup?.met ?? 0; met <= solidEnd; met += stepS) {
     if (!poweredAt(met)) continue;
     const s = asc.sample(met), sun = sunAt(T0 + met * 1000);
-    if (sunlightClearance(s.p, sun) > 0) samples.push({met, p: s.p, sun});
+    if (sunlightMargin(s.p, sun) > 0) samples.push({met, p: s.p, sun});
   }
   return cities.map(([name, lon, lat]) => {
     const fr = A.siteFrame(lon, lat);

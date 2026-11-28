@@ -2,7 +2,7 @@
 
 Interactive Earth-fixed launch trajectories, twilight illumination and observer sky charts, adapted from the [ZhuQue viewer](https://github.com/exoplanet5/ZhuQue) and SatObserver-MX / Starship IFT-14 presentation.
 
-**First and default profile: retrograde, 142° inclination.** Its first mission is the Yaogan-50 03 reconstruction for **2026-10-23, T0 10:15 UTC** (announced 18:15 Beijing time), from Taiyuan LC-9A. The second, **Yaogan-50 04 · 27 Nov 2026** (`?mission=yaogan50-04`), is a forecast for NOTAM A6107/26. That NOTAM has the same polygon as Yaogan-50 03's, so its Earth-fixed track is the same; the T0 is 13:01 UTC, the window opening plus 8 min as on the earlier flights. It is a night launch: sunlight reaches the vehicle only 1.5 s before cutoff, at 707 km. Yaogan-50 03 stays the default. This is **not an SSO mission**. The Zhuque SSO reconstruction is a visualization reference, not a source of CZ-6A engine, staging or orbital assumptions.
+**Two profiles, both retrograde at 142° inclination from Taiyuan LC-9A, on one ground corridor.** The Yaogan-50 launches alternate between two insertion orbits. The page opens on the latest mission, **Yaogan-50 04 · 27 Nov 2026** (profile `retrograde-142-732`, perigee 732 km), launched at 13:05 UTC: a reconstruction from the observed stage-2 cutoff time (13:18:45 UTC, T+825 s) and the first catalog orbit, 2026-269A. Sunlight reaches the vehicle at 13:17:26.4 UTC, at 724 km over Tibet, 79 s before cutoff; the shadow exit was observed at 13:17:37 UTC. The other profile (`retrograde-142`, perigee 702 km) holds the **Yaogan-50 03** reconstruction for **2026-10-23**, announced for 18:15 Beijing time (10:15 UTC) and modelled with liftoff at 10:15:08 UTC. Both use the same vehicle model, one smooth steering law and the same stage-2 burn, and are fitted separately to their own catalog orbits; they differ in insertion altitude by 24 km. Orbit data: Space-Track.org. This is **not an SSO mission**. The Zhuque SSO reconstruction is a visualization reference, not a source of CZ-6A engine, staging or orbital assumptions.
 
 ## Run locally
 
@@ -15,7 +15,7 @@ python3 tools/serve.py
 
 Use an HTTP server, not a `file://` URL: the viewer loads ES modules, JSON and local assets. `tools/serve.py` is the standard-library server with `Cache-Control: no-cache`. The plain `python3 -m http.server` lets browsers reuse an old cached module beside an edited one; a missing new export then shows as `undefined`. If a page was opened from such a server, hard-reload it once (Cmd/Ctrl+Shift+R).
 
-- Select a **profile**, then a **mission configuration**. Defaults are explicit; adding a profile never silently changes the landing mission.
+- Select a **profile**, then a **mission configuration**. Defaults are explicit in `profiles.json`; the source project sets them to the latest mission when it exports.
 - Change **T0** to recompute Sun geometry, sunlight pickup and the synthetic TLE orientation. The supplied Earth-fixed track stays unchanged.
 - Scrub MET, play at 1–300×, or click a timeline time. Space toggles playback; arrows seek 10 s, or 300 s with Shift, when a form control is not focused.
 - **Drag** the globe to turn it; the grabbed ground follows the pointer. **Right-drag**, Ctrl/Shift-drag or a **two-finger drag** tilts and rotates the camera around the point at the centre of the view, Google Earth style, and a two-finger twist rotates too. Scroll or pinch to zoom toward that point. The camera stays at least 319 km above the surface and within 80° of vertical; camera presets reset to a north-up vertical view. Hover the trajectory for MET/altitude; click to seek.
@@ -30,7 +30,7 @@ Use an HTTP server, not a `file://` URL: the viewer loads ES modules, JSON and l
 Example:
 
 ```text
-?profile=retrograde-142&mission=yaogan50-03&t0=10:15:00&met=300&sky=30.66,104.07
+?profile=retrograde-142&mission=yaogan50-03&t0=10:15:08&met=300&sky=30.66,104.07
 ```
 
 ## Adaptive map detail
@@ -53,16 +53,17 @@ Arunachal Pradesh is administered by India and claimed by China. This is an expl
 
 ## Current configuration
 
-| Quantity | Value (revision 3) |
+| Quantity | Yaogan-50 03 (revision 5) |
 |---|---:|
-| Insertion inclination | 141.9817° |
-| Osculating perigee × apogee | 695.3 × 952.9 km |
-| Insertion | T+773.38 s, about 10:27:53 UTC |
-| Cutoff state vs. catalog object 2026-240A | 3.4 km |
-| Sunlight pickup | T+112.6 s, 43.54 km WGS84 altitude |
+| Insertion inclination | 142.0024° |
+| Osculating perigee × apogee | 695.5 × 954.5 km |
+| Liftoff | 10:15:08 UTC (announced 10:15; second fitted) |
+| Insertion | T+825.0 s, 10:28:53 UTC |
+| Cutoff state vs. catalog object 2026-240A | 0.03 km |
+| Sunlight pickup, with refraction | T+96.3 s, 33.3 km WGS84 altitude (straight ray: T+108.4 s, 44.2 km) |
 | Flight sequence (typical CZ-6A) | boosters burn out T+114.5 s, separate T+117.5 s; fairing T+179 s; stage separation T+238.5 s; stage-2 ignition T+240 s |
-| Playback end | T+9897.8 s, about 12:59:58 UTC |
-| Orbit coverage after insertion | 1.5 × 6082.94 s |
+| Playback end | T+9951.1 s, about 13:00:59 UTC |
+| Orbit coverage after insertion | 1.5 × 6084.05 s |
 | Hazard polygon | A5283/26, booster drop zone |
 | Published hazard interval | 10:07–10:28 UTC |
 
@@ -70,26 +71,29 @@ Arunachal Pradesh is administered by India and claimed by China. This is an expl
 
 ### Scientific limitations
 
-Revision 3 (2026-11-07) models the lower ascent as a point-mass CZ-6A built from published masses and thrusts (530 t at liftoff; four 58.3 t boosters at 1214 kN; two YF-100 at 1223.5 kN) and the typical CZ-6A flight sequence: booster burnout T+114.5 s, separation T+117.5 s, fairing jettison T+179 s, core cutoff and stage separation T+238.5 s, stage-2 ignition T+240 s (assumed). Drag and the pitch program are explicit. One effective thrust scale was calibrated on the triangulated December 2025 CZ-6A ascent (1.06) and fits this flight at 0.95. The pitch program is fitted to two untimed ground reports. At N39.00 E110.12 the rocket crossed above the Moon at about 1.6 × its elevation; the model gives 1.53 ×. At N37.76 E110.93 the sunlit rising path looked nearly straight; the model gives a −0.5° great-circle offset. A ballistic booster range is fitted to the NOTAM booster zone and falls 35 km short of its centroid. The reports constrain **climb geometry, not timing**: the climb reaches about 60 km altitude within 55 km of ground range, far steeper than the December polar flight, and is slower in time than revision 2 because the real booster burn lasts 114.5 s. From T+300 s the stage-2 path is the revision-2 solution, fitted to the first catalog orbit of 2026-240A (assumed to be the payload; its identity is unconfirmed) and kept to within 0.05 km. Keeping that path is what pulls the thrust scale below the calibration. This is not telemetry, and fit residuals are not confidence intervals.
+Both missions model the vehicle as a point-mass CZ-6A built from published masses and thrusts (530 t at liftoff; four 58.3 t boosters at 1214 kN; two YF-100 at 1223.5 kN) and the typical CZ-6A flight sequence: booster burnout T+114.5 s, separation T+117.5 s, fairing jettison T+179 s, core cutoff and stage separation T+238.5 s, stage-2 ignition T+240 s (assumed). Drag is explicit. The thrust direction follows **one smooth law**: vertical rise, pitch-over and gravity turn to T+90 s, then the tangent of the thrust elevation falls linearly in time to cutoff, continuous through staging. Earlier revisions used pitch nodes at the staging times, which left steps of up to 38° at stage-2 ignition.
 
-The dogleg is attributed to **stage 1**, and the NOTAM to **boosters**. The plane change is still carried by the stage-2 steering surrogate. The staging times are a typical published sequence rather than this flight's telemetry and are not shown as timeline events; the rocket drawing uses them for its booster, fairing and stage-1 states, and the plume is off during the 1.5 s between core cutoff and stage-2 ignition. No debris trajectory or impact time is shown. Full assumptions and sensitivity refits are in the source project README.
+Stage 2 burns 585 s at an assumed 176.5 kN, from 38.9 t to 8.0 t, to cutoff at T+825 s. That cutoff was observed for Yaogan-50 04; Yaogan-50 03 was not observed at cutoff and is given the same burn. One effective thrust scale was calibrated on the triangulated December 2025 CZ-6A ascent (1.06). It fits Yaogan-50 04 at 0.987 with the boosters 358 km from the pad, and Yaogan-50 03 at 0.984 with the boosters at 349 km, both in the 350 km zone. The Yaogan-50 03 liftoff second, 08, is fitted: the fit is best 7 to 10 s after the announced minute, and the two catalog orbits differ in phase by 8.5 s. The two untimed ground reports of the October flight carry little weight, because their measurement error is unknown. The cutoff states lie 0.03 km and 0.3 km from the first catalog elements of 2026-240A and 2026-269A (assumed payloads; identities unconfirmed).
+
+The NOTAM polygon is the **booster** drop zone. The plane change starts in **stage 1**: the thrust stays in the launch plane until booster separation, then yaws out of it and continues smoothly through stage 2; how the turn is shared between the stages follows from that assumed law. The staging times are a typical published sequence rather than this flight's telemetry and are not shown as timeline events; the rocket drawing uses them for its booster, fairing and stage-1 states, and the plume is off during the 1.5 s between core cutoff and stage-2 ignition. No debris trajectory or impact time is shown. Full assumptions and sensitivity refits are in the source project README.
 
 The exporter resamples the existing solution; it does not fit or integrate a new launch. T0 shifts leave the Earth-fixed trajectory unchanged. The model TLE keeps its **PRELAUNCH MODEL — NOT OBSERVED** label and placeholder catalog number 00000; it is fitted to the reconstructed orbit, not the catalog element set. The page displays numerical samples rather than propagating that TLE.
 
 ### Illumination and visibility
 
 - Sun vectors come from **JPL DE440s**, geometric Earth-to-Sun positions in ITRS/ECEF, at 30-second cadence. Linear interpolation covers all allowed T0/MET combinations, including the prelaunch interval; no extrapolation is allowed.
-- Sunlight requires the vehicle-to-Sun-centre segment to miss the WGS84 ellipsoid. There is **no 34′ refraction adjustment**. The first pickup agrees with the source calculation to within 0.001 s; this is an export consistency check, not predictive timing accuracy.
+- Sunlight uses the **refracted** Sun-centre ray (since 2026-11-28). A ray that grazes the Earth is bent by 1.10°, twice the horizontal refraction, so light reaches points the straight ray cannot: 12.1 s earlier for Yaogan-50 03, 20.4 s earlier for Yaogan-50 04, whose observed shadow exit falls between the two. Each mission carries the table for this test in `meta.sunlight` (standard atmosphere; bending of the ray that grazes the WGS84 ellipsoid); a mission without it falls back to the straight ray. The pickup agrees with the source calculation to within 0.002 s; this is an export consistency check, not predictive timing accuracy.
+- That first light is weak and red, about 0.1% of full Sun after 8 s. Brightness and colour are worked out in the source project (`sunlight_review.py`), not in the page.
 - The instantaneous **10° circle** is a spherical minimum-elevation footprint (`MIN_ELEVATION_DEG` in `docs/js/astro.js`), drawn dashed green (`#199e70`). It has no observer-night mask and is not an accumulated ascent envelope. The globe's **solid yellow Sun 0°** and **solid cyan Sun −12°** contours move with playback UTC.
 - The source-model visibility-analysis helper is kept outside the published site in `tools/visibility.js` for validation; the viewer does not compute or draw an envelope. The archived method unions sunlit-ascent samples with vehicle elevation ≥10° and observer Sun ≤0° at the same time, with an additional insertion-time darkness mask. Its threshold comes from the mission's `visibility.levels` (10°, over 75–124°E × 17–53°N), matching the viewer's `MIN_ELEVATION_DEG` and the source project's regional map; a unit test keeps the two in step.
 - Sky-chart pass badges count sampled time with a sunlit vehicle, elevation ≥10° (the same `MIN_ELEVATION_DEG`), and observer Sun ≤0°. They include ascent and orbital passes and are independent of the instantaneous circle. AOS/LOS are drawn at a 1° elevation threshold.
-- Glow is an illustration, not a prediction of plume size, persistence, brightness or detectability. No terrain, weather, extinction, refraction or finite-disc emergence is modeled.
+- Glow is an illustration, not a prediction of plume size, persistence, brightness or detectability. No terrain, weather, extinction or finite-disc emergence is modeled.
 - Physics and look angles use WGS84 km; the textured globe is spherical for drawing, with heights at true scale. Moon and star rendering use approximate astronomy.
 
 ## Files and reproducibility
 
 - `docs/index.html`: static page and styling.
-- `docs/js/app.js`: scene and controls; `globe-math.js`, `globe-camera.js`: the view-point/heading/tilt/range camera model and its pointer gestures; `profile.js`: validation, tracks and geometric sunlight; `astro.js`, `skychart.js`: astronomy and observer charts.
+- `docs/js/app.js`: scene and controls; `globe-math.js`, `globe-camera.js`: the view-point/heading/tilt/range camera model and its pointer gestures; `profile.js`: validation, tracks and sunlight with refraction; `astro.js`, `skychart.js`: astronomy and observer charts.
 - `docs/js/cities.js`: curated city-centre catalog and zoom-tier thresholds, shared by the globe and city-label sky-chart links.
 - `docs/data/profiles.json`: profile/mission manifest, with explicit defaults.
 - `docs/data/boundaries{,-medium,-fine}.json`: three consistent detail levels for worldwide country borders and China-only regional lines. `boundaries.js` validates and tessellates independent lines; `boundary-layer.js` renders screen-space vectors with zoom-dependent detail.
@@ -98,12 +102,12 @@ The exporter resamples the existing solution; it does not fit or integrate a new
 - `tools/visibility.js`: archived source-model visibility analysis, used by the unit tests only and not published.
 - `tools/export_map_tiles.py`: reproducible local JPEG pyramid generation from the shared 21600 × 10800 Blue Marble source.
 - `tools/export_boundaries.py`: pinned, reproducible boundary-data simplification; see `docs/data/BOUNDARIES-LICENSE.txt` for source URLs, licenses and rebuild commands.
-- `docs/data/yaogan50-03.json`: self-contained first mission, including tracks, solar vectors, zones, events and synthetic TLE. `docs/data/yaogan50-04.json`: the Yaogan-50 04 forecast, same format.
-- `profiles/retrograde-142/<mission>/`: archived trajectory CSV, synthetic TLE, supplied KML and sanitized source metadata for each mission. No raw Space-Track records are included. The Yaogan-50 04 profile is written by the source project's `add_mission.py`, which re-times the Yaogan-50 03 solution rather than fitting a new one.
+- `docs/data/yaogan50-03.json`: self-contained first mission, including tracks, solar vectors, zones, events and synthetic TLE. `docs/data/yaogan50-04.json`: the Yaogan-50 04 reconstruction, same format.
+- `profiles/<profile>/<mission>/`: archived trajectory CSV, synthetic TLE, supplied KML and sanitized source metadata for each mission (`retrograde-142/yaogan50-03`, `retrograde-142-732/yaogan50-04`). No raw Space-Track records are included. The Yaogan-50 04 folder is written by the source project's `add_mission.py --page` from that flight's own fit (`build_perigee732.py`). A later flight on the corridor is re-timed from one of the two fits and joins that profile.
 - `tools/export_profile.py`: reproducible exporter for this specific source model. It preserves other registered profiles and missions when updating the manifest; it is not a generic CZ-6A propulsion solver.
 - `PROFILE_FORMAT.md`: data contract and adding future polar, SSO, retrograde or low-inclination configurations.
 
-Rebuild the first mission (NumPy, SciPy, pyproj and Skyfield required); add `--profile-dir profiles/retrograde-142/yaogan50-04` for the second:
+Rebuild the first mission (NumPy, SciPy, pyproj and Skyfield required); add `--profile-dir profiles/retrograde-142-732/yaogan50-04` for the second:
 
 ```sh
 ~/.venvs/astro313/bin/python -I tools/export_profile.py
@@ -112,7 +116,7 @@ Rebuild the first mission (NumPy, SciPy, pyproj and Skyfield required); add `--p
 
 Adding a mission rewrites `profiles.json`, whose hash is in every mission's validation report, so export and `--check` all of them afterwards. A mission whose ascent stays in Earth's shadow sets `nominal_pickup_met_s` to `null`.
 
-The shared kernel is read from `~/JPLDE/de440s.bsp`; it is never copied or downloaded into this repository. The browser does not need the kernel or Python. Source hashes, interpolation details, dependencies and nine export checks are recorded in `tests/profile_validation.json` (Yaogan-50 03) and `tests/profile_validation_<mission>.json` (others).
+The shared kernel is read from `~/JPLDE/de440s.bsp`; it is never copied or downloaded into this repository. The browser does not need the kernel or Python. Source hashes, interpolation details, dependencies and ten export checks are recorded in `tests/profile_validation.json` (Yaogan-50 03) and `tests/profile_validation_<mission>.json` (others).
 
 Rebuild/check imagery (Pillow required; the shared source image is read, not copied):
 
@@ -147,4 +151,4 @@ The viewer is published at **https://exoplanet5.github.io/CZ-6A/**. GitHub Pages
 
 Illustration: Mickey. NASA Blue Marble Next Generation / Black Marble base textures. Administrative boundaries: [Natural Earth](https://www.naturalearthdata.com/), public domain; source revision and attribution are preserved in `docs/data/BOUNDARIES-LICENSE.txt` and `boundaries.json`. Three.js is vendored with its MIT license (`docs/vendor/three/LICENSE`). Star catalog and Milky Way data are from d3-celestial, BSD-3 (`docs/data/STARDATA-LICENSE.txt`). Sky-chart and viewer components are adapted from [ZhuQue](https://github.com/exoplanet5/ZhuQue) and [Starship IFT-14](https://github.com/exoplanet5/Starship-IFT14), with CZ-6A profile loading, geometric illumination, optional events/tracks and responsive controls added here. Code license: Apache-2.0, see `LICENSE`.
 
-The scientific source is the local `launch_traj_6A_reverse` reconstruction (revision 3), the supplied NOTAM A5283/26 issued 2026-10-17, user-supplied ground reports, the triangulated December 2025 CZ-6A ascent used for calibration, the typical CZ-6A flight sequence and vehicle figures from public sources, and the first Space-Track elements of 2026-240A. The Yaogan-50 02 launch-time reference is [Next Spaceflight's March 15 flight record](https://nextspaceflight.com/launches/details/8186), also documented by [SciNews/CCTV](https://www.youtube.com/watch?v=L0gIO7TAA4g). Derived precursor orbit-family parameters inform the model; raw catalog downloads are not redistributed. This is an independent visualization, not official launch guidance or an official ephemeris.
+The scientific source is the local `launch_traj_6A_reverse` reconstruction (Yaogan-50 03 revision 5 and the Yaogan-50 04 fit), the supplied NOTAM A5283/26 issued 2026-10-17, user-supplied ground reports, the triangulated December 2025 CZ-6A ascent used for calibration, the typical CZ-6A flight sequence and vehicle figures from public sources, and the first Space-Track elements of 2026-240A. The Yaogan-50 02 launch-time reference is [Next Spaceflight's March 15 flight record](https://nextspaceflight.com/launches/details/8186), also documented by [SciNews/CCTV](https://www.youtube.com/watch?v=L0gIO7TAA4g). Derived precursor orbit-family parameters inform the model; raw catalog downloads are not redistributed. This is an independent visualization, not official launch guidance or an official ephemeris.

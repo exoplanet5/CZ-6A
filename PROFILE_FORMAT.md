@@ -11,7 +11,7 @@ The **profile** describes a corridor/orbit family; a **mission** supplies one da
 
 The manifest has `schema_version: 1`, `default_profile`, `supported_families` and a `profiles` array. Each profile has `id`, `label`, `family`, `default_mission` and `missions`. Each mission entry has `id`, `label` and a relative `file` such as `data/yaogan50-03.json`.
 
-The selector remains visible with one profile. `?profile=<id>&mission=<id>` selects a configuration. Unknown IDs fall back to explicit defaults. Selection reloads the page, discarding mission-specific T0/MET/camera/site state while retaining layer preferences; this prevents stale worker results or cached sky-chart geometry from crossing missions.
+The selector remains visible with one profile. `?profile=<id>&mission=<id>` selects a configuration. A mission id alone finds its profile, also when the link names another one. Unknown IDs fall back to explicit defaults. Selection reloads the page, discarding mission-specific T0/MET/camera/site state while retaining layer preferences; this prevents stale worker results or cached sky-chart geometry from crossing missions.
 
 ## Mission object
 
@@ -27,6 +27,7 @@ Top level: `schema_version: 1`, `meta`, `tracks`, `zones`, `events`, `sun`, and 
 - `phases`: increasing `{until,label}` entries. Prelaunch is normally `{until:0,label:'Pre-launch'}`; the final label persists to the end.
 - `views`: arrays `[label,longitude,latitude,camera_distance]`. Distance is in Earth radii, valid 1.05–14; responsive framing adjusts it on narrow screens.
 - `visibility`: `{extent:[west,east,south,north],grid_step_deg,time_step_s,levels:[10]}`. Retained in schema v1 for source-model analysis and validation; the viewer does not compute or display the ascent envelope. The extent is an explicit bounded analysis region. To cross the dateline, use increasing unwrapped longitudes such as 170–190, not 170 to −170. Longitude span must be ≤360°, latitude limits within ±90°, and grid size ≤200,000 cells.
+- `sunlight` (optional): the refraction table for the sunlight test, written by the source model: `r_local_km`, `top_km`, `floor_km` (0), `floor_index_of_refraction`, `half_bending_deg`, and `partial_bending_deg` and `refractivity` at uniform steps of `sqrt(altitude / top_km)`. With it, the vehicle is lit when the refracted Sun-centre ray clears the WGS84 ellipsoid; without it, when the straight ray does.
 - `notes`: plain-text model assumptions, source attribution, limitations and uncertainty distinctions. Full notes remain in the mission data; the concise UI links to the README rather than repeating them.
 
 ### Uniform tracks
@@ -57,7 +58,7 @@ The browser creates separate arrays for geodetic spherical drawing and physical 
 
 `sun` has `start_utc`, `dt` (seconds), `vectors` (geometric Earth-to-Sun **ECEF km**, not unit vectors), and a `model` description. Coverage must include `t0_min − 600 s` through `t0_max + final_MET`. The runtime rejects insufficient coverage; it never extrapolates. Current data uses DE440s at 30 s cadence.
 
-Sunlight uses a finite segment from the WGS84 vehicle position to the solar centre. The solar contours on the textured globe use geodetic normals on its spherical drawing and are visual references. The default-on green 10° circle (`MIN_ELEVATION_DEG`) is an instantaneous spherical footprint, without a night mask. The archived visibility-analysis helpers use finite-distance, ellipsoidal geometry and an insertion-time night mask, but are not loaded or rendered by the viewer.
+Sunlight uses a finite segment from the WGS84 vehicle position to the solar centre; with `meta.sunlight` the limiting solar depression is raised by the bending of the ray that grazes the ellipsoid (1.10° above the atmosphere), see `sunlightMargin` in `docs/js/profile.js`. The solar contours on the textured globe use geodetic normals on its spherical drawing and are visual references. The default-on green 10° circle (`MIN_ELEVATION_DEG`) is an instantaneous spherical footprint, without a night mask. The archived visibility-analysis helpers use finite-distance, ellipsoidal geometry and an insertion-time night mask, but are not loaded or rendered by the viewer.
 
 ### Optional synthetic TLE
 

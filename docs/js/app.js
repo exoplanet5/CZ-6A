@@ -6,7 +6,7 @@ import {LineSegments2} from 'three/addons/lines/LineSegments2.js';
 import {LineSegmentsGeometry} from 'three/addons/lines/LineSegmentsGeometry.js';
 import {CSS2DRenderer, CSS2DObject} from 'three/addons/renderers/CSS2DRenderer.js';
 import * as A from './astro.js';
-import {fetchJSON, validateManifest, validateMission, selectProfile, createFlight, solarEphemeris, sunlightClearance, computeJelly, clockSeconds, clamp, escapeHTML as esc} from './profile.js';
+import {fetchJSON, validateManifest, validateMission, selectProfile, createFlight, solarEphemeris, sunlightMargin, computeJelly, clockSeconds, clamp, escapeHTML as esc} from './profile.js';
 import {createSkyChart} from './skychart.js';
 import {validateBoundaries,boundarySegments} from './boundaries.js';
 import {createMapTiles} from './map-tiles.js';
@@ -45,7 +45,7 @@ async function start() {
     show:Object.fromEntries(['term','zones','labels','gt','jelly','vis','falls','sky','grid','lights','cities','fp','borders'].map((k)=>[k,qs.get(k)!=='0']))};
   const t0ms=()=>A.dateT0ms(M.date,state.t0), phaseOf=(met)=>(M.phases.find((p)=>met<p.until)||M.phases.at(-1)).label;
   function styleAt(met,T0) {
-    const s=shipAt(met),lit=sunlightClearance(s.p,sunAt(T0+met*1000))>0,powered=poweredAt(met);
+    const s=shipAt(met),lit=sunlightMargin(s.p,sunAt(T0+met*1000))>0,powered=poweredAt(met);
     return {lit,powered,color:powered?(lit?C.sun:C.ascent):C.orbit};
   }
   // Optional mission fields. meta.jelly adds the jelly panel and 10° zones; meta.solid_end_met splits the sunlit arc into solid and upper-stage plumes.

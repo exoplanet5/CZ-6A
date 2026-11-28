@@ -6,6 +6,9 @@ Run with the astronomy environment (from any directory)::
     ~/.venvs/astro313/bin/python -I tools/export_profile.py
     ~/.venvs/astro313/bin/python -I tools/export_profile.py --check
 
+Sunlight pickup uses the refraction table in meta.sunlight when the metadata has one (written by
+the source project's sunlight.py), else the straight Sun-centre ray.
+
 Inputs are metadata.json and its three hashed, profile-local source files. The
 original reverse-model project and raw catalog records are not needed. NumPy,
 SciPy, pyproj and Skyfield are required. The only ephemeris opened is the shared
@@ -321,6 +324,32 @@ def sunlight_clearance(position, sun):
     return np.sum(closest * closest, axis=-1) - 1
 
 
+def sunlight_margin(position, sun, table):
+    """Degrees by which the refracted Sun-centre ray clears the ellipsoid; positive when lit.
+
+    The same test as docs/js/profile.js sunlightMargin, from the meta.sunlight table of the source
+    model: the floor ray's bending and the refractivity at uniform steps of sqrt(altitude / top_km).
+    """
+    position, sun = np.asarray(position, dtype=float), np.asarray(sun, dtype=float)
+    r = position / AXES_KM
+    d = (sun - position) / AXES_KM
+    fraction = -np.sum(r * d, axis=-1) / np.sum(d * d, axis=-1)
+    if fraction <= 0:
+        return 90.0
+    point = position + min(fraction, 1.0) * (sun - position)
+    base = table["r_local_km"] + ecef_to_geodetic(point[None])[0, 2]
+    distance = np.linalg.norm(point - position)
+    radius = math.hypot(distance, base)
+    altitude = max(radius - table["r_local_km"], 0.0)
+    grid = np.linspace(0, 1, len(table["refractivity"]))
+    along = math.sqrt(min(altitude / table["top_km"], 1.0))
+    index = 1 + (np.interp(along, grid, table["refractivity"]) if altitude < table["top_km"] else 0.0)
+    cosine = table["floor_index_of_refraction"] * (table["r_local_km"] + table["floor_km"]) / (index * radius)
+    limit = (math.degrees(math.acos(min(1.0, max(-1.0, cosine))))
+             + np.interp(along, grid, table["partial_bending_deg"]) + table["half_bending_deg"])
+    return float(limit - math.degrees(math.atan2(distance, base)))
+
+
 def sample_uniform(values, start, dt, when):
     offset = (np.asarray(when) - start) / dt
     require(np.all(offset >= -1e-10) and np.all(offset <= len(values) - 1 + 1e-10),
@@ -395,6 +424,14 @@ def validate(mission, record, summary, kernel):
     nominal_offset = (clock(meta, "t0_default") - start).total_seconds()
     ascent = tracks["ascent"]
 
+    refraction = meta.get("sunlight")
+    if refraction is not None:
+        require(refraction["floor_km"] == 0 and len(refraction["partial_bending_deg"]) == len(refraction["refractivity"]) >= 2
+                and abs(refraction["partial_bending_deg"][-1] - refraction["half_bending_deg"]) < 1e-6
+                and 0.5 < refraction["half_bending_deg"] < 0.6,
+                "meta.sunlight is not a floor-ray refraction table")
+        checks["sunlight_uses_refraction_table"] = True
+
     def clearance(t, mode="ecef_linear"):
         if mode == "ecef_linear":
             position = sample_uniform(reconstructed["ascent"], ascent["met0"], ascent["dt"], t)
@@ -404,6 +441,8 @@ def validate(mission, record, summary, kernel):
             p = sample_uniform(geo, ascent["met0"], ascent["dt"], t)
             position = geodetic_to_ecef(*p)
         solar = sample_uniform(vectors, 0, sun["dt"], nominal_offset + t)
+        if refraction:
+            return sunlight_margin(position, solar, refraction)
         return float(sunlight_clearance(position, solar))
 
     times = ascent["met0"] + np.arange(len(ascent["lon"])) * ascent["dt"]

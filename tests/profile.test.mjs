@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as A from '../docs/js/astro.js';
-import {validateManifest,validateMission,selectProfile,createFlight,solarEphemeris,sunlightClearance,computeJelly,clockSeconds,Track} from '../docs/js/profile.js';
+import {validateManifest,validateMission,selectProfile,createFlight,solarEphemeris,sunlightClearance,sunlightMargin,setSunlightModel,geodeticHeight,computeJelly,clockSeconds,Track} from '../docs/js/profile.js';
 import {calculateVisibility,contour} from '../tools/visibility.js';
 const load=(name)=>JSON.parse(fs.readFileSync(new URL('../docs/data/'+name,import.meta.url)));
 const data=load('yaogan50-03.json'),index=load('profiles.json'),T0=Date.parse(data.tle_ref.t0),flight=createFlight(data),sun=solarEphemeris(data.sun);
@@ -12,9 +12,10 @@ const near=(a,b,tol=1e-7)=>assert.ok(Math.abs(a-b)<tol,`${a} vs ${b}`);
 test('manifest has explicit default independent of profile order',()=>{
   validateManifest(index);
   const more=structuredClone(index);more.profiles.push({...structuredClone(more.profiles[0]),id:'test-polar-fixture',label:'Test fixture'});
-  assert.equal(selectProfile(more,new URLSearchParams()).profile.id,'retrograde-142');
+  assert.equal(index.default_profile,'retrograde-142-732');   // the profile of the latest mission
+  assert.equal(selectProfile(more,new URLSearchParams()).profile.id,index.default_profile);
   assert.equal(selectProfile(more,new URLSearchParams('profile=test-polar-fixture')).profile.id,'test-polar-fixture');
-  assert.equal(selectProfile(more,new URLSearchParams('profile=unknown')).profile.id,'retrograde-142');
+  assert.equal(selectProfile(more,new URLSearchParams('profile=unknown')).profile.id,index.default_profile);
   more.default_profile='missing';assert.throws(()=>validateManifest(more));
 });
 test('mission schema rejects gaps, nonfinite samples and incomplete solar coverage',()=>{
@@ -39,11 +40,26 @@ test('Cartesian track interpolation crosses the antimeridian locally',()=>{
   const t=new Track({met0:0,dt:10,lon:[179,-179],lat:[0,0],alt:[100,100]});
   assert.ok(Math.abs(A.vecToLL(...t.sample(5).u).lon)>179.99);
 });
-test('DE440s table and ellipsoid ray reproduce original pickup within 0.1 second',()=>{
+test('refracted pickup matches the source model within 0.1 second; the straight ray is 12.1 s later',()=>{
   const j=computeJelly(flight.tracks.ascent,sun,T0);
-  near(j.pickup.met,112.58297529489528,.1);near(j.pickup.alt,43.542575,.001);
-  assert.ok(sunlightClearance(flight.shipAt(j.pickup.met-.1).p,sun(T0+(j.pickup.met-.1)*1000))<0);
-  assert.ok(sunlightClearance(flight.shipAt(j.pickup.met+.1).p,sun(T0+(j.pickup.met+.1)*1000))>0);
+  near(j.pickup.met,96.26646370003921,.1);near(j.pickup.alt,33.256,.1);
+  assert.ok(sunlightMargin(flight.shipAt(j.pickup.met-.1).p,sun(T0+(j.pickup.met-.1)*1000))<0);
+  assert.ok(sunlightMargin(flight.shipAt(j.pickup.met+.1).p,sun(T0+(j.pickup.met+.1)*1000))>0);
+  setSunlightModel(null);   // the straight Sun-centre ray of the earlier revisions
+  try{const g=computeJelly(flight.tracks.ascent,sun,T0);near(g.pickup.met,108.41477405305294,.1);near(g.pickup.alt,44.2413,.1);near(g.pickup.met-j.pickup.met,12.15,.1);}
+  finally{setSunlightModel(data.meta.sunlight);}
+});
+test('refraction lights a point 700 km up when the Sun is 26.5 degrees below its horizontal, not at 27',()=>{
+  const t=data.meta.sunlight,p=[A.RE+700,0,0],sunBelow=(deg)=>[-1.5e8*Math.sin(deg*A.D2R),0,1.5e8*Math.cos(deg*A.D2R)];
+  near(2*t.half_bending_deg,1.0993,.002);near(t.partial_bending_deg.at(-1),t.half_bending_deg,1e-6);
+  const dip=Math.acos(A.RE/(A.RE+700))*A.R2D;   // 25.7 deg: the straight-ray limit
+  assert.ok(sunlightClearance(p,sunBelow(dip-.05))>0);assert.ok(sunlightClearance(p,sunBelow(dip+.05))<0);
+  assert.ok(sunlightMargin(p,sunBelow(26.5))>0);assert.ok(sunlightMargin(p,sunBelow(27))<0);
+  near(sunlightMargin(p,sunBelow(dip))-sunlightMargin(p,sunBelow(dip+1)),1,1e-3);   // the margin is in degrees
+  // at the straight-ray limit it is the bending, less the small Bouguer term of the air at the grazing point
+  near(sunlightMargin(p,sunBelow(dip)),2*t.half_bending_deg-(t.floor_index_of_refraction-1)/Math.tan(dip*A.D2R)*A.R2D,.003);
+  near(geodeticHeight(A.geodeticToScene(100,35,12.5)),12.5,1e-6);near(geodeticHeight(A.geodeticToScene(-70,-80,-40)),-40,1e-6);
+  assert.ok(geodeticHeight([0,0,0])<-6000&&geodeticHeight([10,0,0])<-6000);
 });
 test('solar table covers extreme T0 and MET combinations; no extrapolation',()=>{
   for(const t of ['09:30:00','11:00:00'])for(const met of [-600,flight.end])assert.ok(sun(A.dateT0ms(data.meta.date,clockSeconds(t))+met*1000).every(Number.isFinite));
@@ -60,9 +76,8 @@ test('visibility circle uses the 10-degree minimum elevation',()=>{
   const edge=Math.atan2(r*Math.cos(lam)-A.RE,r*Math.sin(lam))*A.R2D;
   near(edge,10,1e-9);assert.ok(A.footprintDeg(h,10)>A.footprintDeg(h,15));
 });
-test('geometric sunlight has correct dayside and nightside signs',()=>{
-  assert.ok(sunlightClearance([A.RE+100,0,0],[1.5e8,0,0])>0);
-  assert.ok(sunlightClearance([-A.RE-100,0,0],[1.5e8,0,0])<0);
+test('sunlight has correct dayside and nightside signs, with and without refraction',()=>{
+  for(const f of [sunlightClearance,sunlightMargin]){assert.ok(f([A.RE+100,0,0],[1.5e8,0,0])>0);assert.ok(f([-A.RE-100,0,0],[1.5e8,0,0])<0);}
 });
 test('archived visibility threshold matches the viewer minimum elevation',()=>{
   assert.deepEqual(data.meta.visibility.levels,[A.MIN_ELEVATION_DEG]);
@@ -79,7 +94,7 @@ test('visibility requires vehicle sunlight and observer darkness at the same tim
   const d=structuredClone(data);d.meta.visibility={extent:[95,105,27,38],grid_step_deg:1,time_step_s:5,levels:[LEVEL]};
   const r=calculateVisibility(d,T0),count=Math.ceil(data.meta.insertion_met/5);
   for(let j=0;j<r.ny;j++)for(let i=0;i<r.nx;i++){const k=j*r.nx+i;if(r.mel[k]<LEVEL)continue;const fr=A.siteFrame(r.lon0+i*r.dx,r.lat0+j*r.dy);let witness=false;
-    for(let n=0;n<=count;n++){const t=data.meta.insertion_met*n/count,p=flight.shipAt(t).p,s=sun(T0+t*1000);if(sunlightClearance(p,s)>0 && A.lookAngles(fr,s).el<=0 && A.lookAngles(fr,p).el>=LEVEL){witness=true;break;}}
+    for(let n=0;n<=count;n++){const t=data.meta.insertion_met*n/count,p=flight.shipAt(t).p,s=sun(T0+t*1000);if(sunlightMargin(p,s)>0 && A.lookAngles(fr,s).el<=0 && A.lookAngles(fr,p).el>=LEVEL){witness=true;break;}}
     assert.ok(witness,'Every visible cell must have a simultaneous witness');
   }
 });

@@ -1,12 +1,13 @@
 {
   "schema_version": 1,
-  "profile": "retrograde-142",
+  "profile": "retrograde-142-732",
   "mission": "yaogan50-04",
   "checks": {
     "track_arrays_finite_and_uniform": true,
     "exact_shared_insertion_endpoint": true,
     "exact_1_5_keplerian_period_duration": true,
     "wgs84_roundtrip": true,
+    "sunlight_uses_refraction_table": true,
     "solar_km_units_and_full_t0_prelaunch_coverage": true,
     "nominal_pickup_within_0_1_s": true,
     "shadow_before_and_sunlight_after_pickup": true,
@@ -14,39 +15,39 @@
     "sanitized_metadata": true
   },
   "source": {
-    "source_samples": 3209,
+    "source_samples": 3268,
     "source_interval_met_s": [
       0.0,
-      12939.737791
+      13033.877412
     ],
     "interpolation": "cubic Hermite in ECEF using transformed source velocities",
-    "source_frame_roundtrip_max_km": 7.149595856877369e-06
+    "source_frame_roundtrip_max_km": 7.05668688627763e-06
   },
   "tracks": {
     "ascent": {
-      "samples": 774,
+      "samples": 826,
       "met0": 0,
-      "dt_s": 1.0004890038809833,
-      "end_met_s": 773.378,
-      "wgs84_roundtrip_max_km": 3.1053796192284632e-06
+      "dt_s": 1.0,
+      "end_met_s": 825.0,
+      "wgs84_roundtrip_max_km": 3.161553195241271e-06
     },
     "orbit": {
-      "samples": 1826,
-      "met0": 773.378,
-      "dt_s": 4.999674377964744,
-      "end_met_s": 9897.783739785658,
-      "wgs84_roundtrip_max_km": 7.1087733886088245e-06
+      "samples": 1832,
+      "met0": 825.0,
+      "dt_s": 5.000905548444021,
+      "end_met_s": 9981.658059201003,
+      "wgs84_roundtrip_max_km": 7.00910732120974e-06
     }
   },
-  "orbit_duration_s": 9124.405739785658,
+  "orbit_duration_s": 9156.658059201003,
   "orbit_duration_periods": 1.5,
   "insertion_join_ecef_km": 0.0,
   "sun": {
-    "samples": 535,
+    "samples": 538,
     "dt_s": 30,
     "start_utc": "2026-11-27T12:04:00Z",
-    "end_utc": "2026-11-27T16:31:00Z",
-    "required_end_utc": "2026-11-27T16:30:57.783740Z",
+    "end_utc": "2026-11-27T16:32:30Z",
+    "required_end_utc": "2026-11-27T16:32:21.658059Z",
     "minimum_prelaunch_met_s": -600,
     "kernel": {
       "file": "de440s.bsp",
@@ -54,11 +55,11 @@
     }
   },
   "nominal_pickup": {
-    "reference_met_s": 771.8909498990465,
-    "ecef_linear_met_s": 771.8909644513275,
-    "geodetic_linear_met_s": 771.8907037512528,
-    "ecef_linear_error_s": 1.4552280958923802e-05,
-    "geodetic_linear_error_s": -0.0002461477937458767
+    "reference_met_s": 746.3953746990007,
+    "ecef_linear_met_s": 746.3954725942481,
+    "geodetic_linear_met_s": 746.3952854908971,
+    "ecef_linear_error_s": 9.789524733605504e-05,
+    "geodetic_linear_error_s": -8.920810364543286e-05
   },
   "dependencies": {
     "numpy": "2.4.2",
@@ -68,13 +69,13 @@
     "jplephem": "2.24"
   },
   "inputs_sha256": {
-    "metadata.json": "765474e22f534f5b28631a116d63d8a5d04729d0dd4e22c5820cca53e08d824a",
-    "Yaogan-50_04_trajectory.csv": "30359bb937a1aadd5d19b3ba34ff895ab0f9e080c65e4340a93664795950a4ef",
-    "Yaogan-50_04_prelaunch.tle": "6295007ebab6b14e3eede9adb40e38a769dec9dd902f779cc815f5426b48033e",
+    "metadata.json": "1fc1a0eedd9591a7381d5d75ba7838b9e4c3298f659a1c6915e44a274810d710",
+    "Yaogan-50_04_trajectory.csv": "9d8ad8158be5fb803afded55fd9984517769480c88bd2ccf2c3b029ec9caa843",
+    "Yaogan-50_04_prelaunch.tle": "7b915f2cddaba2a7fe15c0a433fbd1c3488173ae146c720b07cb11c40aca714e",
     "Launch_NOTAM_20261127_CZ-6A.kml": "2da3e35963b6ea258982a0ed5d561ad3b1c5e47e967e48877db9a632310fc943"
   },
   "outputs_sha256": {
-    "yaogan50-04.json": "a7d94333d3f4a6e45b91d7cb8e79e86ed471ced4e990872e3db90cb6e4f7998d",
-    "profiles.json": "568269ebb52e08422abce1735bb8c1cbace36957db000043fdafd4bfb9d58125"
+    "yaogan50-04.json": "d66f41148da2fbde9091caa75521d98ed91f3b040d5aa50479c333179106b331",
+    "profiles.json": "5ff92c45fd62ae10a910f1b734d88b887352ddad46d73d94e0227899868a3cde"
   }
 }
